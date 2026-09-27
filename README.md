@@ -74,4 +74,4 @@ The UI has no login: keep it on your LAN, and use Tailscale for access away from
 
 - One process only (`next start` or `node server.js`). Cron, the queue and the file store live inside it; don't deploy to serverless platforms.
 - CSFloat rate limits are undocumented. Requests go through one shared gate (default one every 2 s, `CSFLOAT_MIN_INTERVAL_MS`), which also obeys `Retry-After` and quota headers. A rejected API key pauses cron until you resume it in the UI.
-- Some dependency ranges in `package.json` are open (`>=`) because this was written without registry access; commit `pnpm-lock.yaml` after the first install to pin them.
+- `pnpm-lock.yaml` pins exact versions; keep it committed.

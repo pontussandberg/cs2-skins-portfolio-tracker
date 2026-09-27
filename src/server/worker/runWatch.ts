@@ -97,7 +97,7 @@ export async function executeRun(deps: WorkerDeps, runId: string): Promise<RunRe
     await store.saveRun(run);
     log.error({ err }, "run failed");
     bus.emit({ type: "run.failed", watchId: run.watchId, runId, error: message });
-    if (err instanceof CsfloatAuthError) deps.onAuthError(message);
+    if (err instanceof CsfloatAuthError || (err instanceof Error && err.name === "CsfloatAuthError")) deps.onAuthError(message);
     return run;
   }
 }

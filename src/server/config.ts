@@ -21,7 +21,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     csfloatApiKey: blankToNull(env.CSFLOAT_API_KEY),
     discordWebhookUrl: blankToNull(env.DISCORD_WEBHOOK_URL),
     appUrl: blankToNull(env.APP_URL)?.replace(/\/+$/, "") ?? null,
-    dataDir: path.resolve(blankToNull(env.DATA_DIR) ?? "./data"),
+    dataDir: path.resolve(/*turbopackIgnore: true*/ blankToNull(env.DATA_DIR) ?? "./data"),
     timezone: blankToNull(env.TZ) ?? "Europe/Stockholm",
     minIntervalMs: Number.isFinite(interval) && interval >= 250 ? interval : 2000,
     logLevel: blankToNull(env.LOG_LEVEL) ?? "info",

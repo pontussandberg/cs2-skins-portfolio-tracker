@@ -22,8 +22,8 @@
   },
   "dependencies": {
     "@apollo/client": "^4.0.0",
-    "@apollo/client-integration-nextjs": ">=0.13.0",
-    "@apollo/server": ">=4.12.0 <6",
+    "@apollo/client-integration-nextjs": "^0.14.5",
+    "@apollo/server": "^5.5.1",
     "@fontsource-variable/nunito": "^5.1.0",
     "@fontsource/jetbrains-mono": "^5.1.0",
     "clsx": "^2.1.1",
@@ -38,10 +38,10 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
-    "@graphql-codegen/cli": ">=5.0.0",
-    "@graphql-codegen/typescript": ">=4.1.0",
-    "@graphql-codegen/typescript-operations": "^6.0.0",
-    "@graphql-codegen/typescript-resolvers": ">=4.5.0",
+    "@graphql-codegen/cli": "^7.4.3",
+    "@graphql-codegen/typescript": "^6.1.0",
+    "@graphql-codegen/typescript-operations": "^6.1.7",
+    "@graphql-codegen/typescript-resolvers": "^6.1.0",
     "@tailwindcss/postcss": "^4.1.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.2.0",
@@ -58,6 +58,9 @@
       "sharp",
       "@parcel/watcher",
       "@tailwindcss/oxide"
+    ],
+    "ignoredBuiltDependencies": [
+      "@apollo/protobufjs"
     ]
   }
 }

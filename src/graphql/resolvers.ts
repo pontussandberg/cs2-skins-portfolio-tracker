@@ -4,12 +4,14 @@ import { buildFeed, countUnread, dedupeById } from "@/core/diff";
 import { iconUrl, listingUrl } from "@/core/format";
 import { buildSubQueries } from "@/core/queryHash";
 import type { RunRecord, Watch } from "@/core/types";
-import { WatchInputError } from "@/server/watchInput";
+import type { WatchInputError } from "@/server/watchInput";
 import type { Resolvers } from "./__generated__/resolvers-types";
 
 function userError(err: unknown): never {
-  if (err instanceof WatchInputError) {
-    throw new GraphQLError(err.message, { extensions: { code: "BAD_USER_INPUT", issues: err.issues } });
+  // Match by name: the runtime is created from instrumentation.ts, which Next bundles separately,
+  // so `instanceof` against this bundle's class would be false.
+  if (err instanceof Error && err.name === "WatchInputError") {
+    throw new GraphQLError(err.message, { extensions: { code: "BAD_USER_INPUT", issues: (err as WatchInputError).issues } });
   }
   if (err instanceof Error) throw new GraphQLError(err.message, { extensions: { code: "BAD_REQUEST" } });
   throw err;

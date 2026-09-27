@@ -41,7 +41,7 @@ export function RunSummaryLine({ run }: { run: RunView | null | undefined }) {
   const drops = run.priceChanges.filter((p) => p.after < p.before).length;
   return (
     <span className="text-ink-muted">
-      {run.added.length} new · {drops} price drops · {run.goneIds.length} gone · {timeAgo(run.finishedAt)}
+      {run.added.length} new · {drops} price drop{drops === 1 ? "" : "s"} · {run.goneIds.length} gone · {timeAgo(run.finishedAt)}
     </span>
   );
 }

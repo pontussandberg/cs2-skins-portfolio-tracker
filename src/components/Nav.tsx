@@ -36,7 +36,8 @@ export function Nav() {
         })}
       </nav>
       <LinkButton href="/watches/new" tone="mint" size="sm">
-        + New watch
+        <span className="sm:hidden">+ New</span>
+        <span className="hidden sm:inline">+ New watch</span>
       </LinkButton>
     </header>
   );

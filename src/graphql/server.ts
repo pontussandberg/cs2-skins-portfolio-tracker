@@ -11,7 +11,7 @@ type G = typeof globalThis & { [KEY]?: Promise<ApolloServer<GqlContext>> };
 export function getApolloServer(): Promise<ApolloServer<GqlContext>> {
   const g = globalThis as G;
   g[KEY] ??= (async () => {
-    const typeDefs = await readFile(path.join(process.cwd(), "schema.graphql"), "utf8");
+    const typeDefs = await readFile(path.join(/*turbopackIgnore: true*/ process.cwd(), "schema.graphql"), "utf8");
     const server = new ApolloServer<GqlContext>({
       typeDefs,
       resolvers,
