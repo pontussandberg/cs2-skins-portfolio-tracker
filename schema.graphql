@@ -1,0 +1,162 @@
+scalar DateTime
+
+type Query {
+  watches: [Watch!]!
+  watch(id: ID!): Watch
+  run(id: ID!): Run
+  "New listings and price drops across all watches, newest first."
+  feed(limit: Int = 100): [FeedItem!]!
+  system: SystemStatus!
+}
+
+type Mutation {
+  createWatch(input: WatchInput!): Watch!
+  updateWatch(id: ID!, input: WatchInput!): Watch!
+  deleteWatch(id: ID!): Boolean!
+  "Queue a run now. Returns the already-queued run if one exists."
+  runWatch(id: ID!): Run!
+  runAll: [Run!]!
+  markWatchSeen(id: ID!): Watch!
+  markAllSeen: Boolean!
+  sendTestNotification: Boolean!
+  resumeScheduler: SystemStatus!
+}
+
+type SystemStatus {
+  csfloatKeyConfigured: Boolean!
+  discordConfigured: Boolean!
+  schedulerSuspended: Boolean!
+  suspendedReason: String
+  queueSize: Int!
+  timezone: String!
+}
+
+"CSFloat /listings filters. Prices in USD cents."
+type CsfloatQuery {
+  def_index: Int
+  paint_index: Int
+  market_hash_name: String
+  min_float: Float
+  max_float: Float
+  category: Int
+  min_price: Int
+  max_price: Int
+  type: String
+  stickers: String
+  collection: String
+  rarity: Int
+}
+
+input CsfloatQueryInput {
+  def_index: Int
+  paint_index: Int
+  market_hash_name: String
+  min_float: Float
+  max_float: Float
+  category: Int
+  min_price: Int
+  max_price: Int
+  type: String
+  stickers: String
+  collection: String
+  rarity: Int
+}
+
+input WatchInput {
+  name: String!
+  query: CsfloatQueryInput!
+  seeds: [Int!]
+  schedule: String
+  maxPages: Int
+  enabled: Boolean
+  notify: Boolean
+}
+
+type Watch {
+  id: ID!
+  name: String!
+  query: CsfloatQuery!
+  seeds: [Int!]!
+  schedule: String
+  maxPages: Int!
+  enabled: Boolean!
+  notify: Boolean!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  lastSeenAt: DateTime
+  unreadCount: Int!
+  isRunning: Boolean!
+  nextRunAt: DateTime
+  lastRun: Run
+  runs(limit: Int = 20): [Run!]!
+  "Union of the latest snapshot of every seed, newest first."
+  currentListings: [Listing!]!
+  csfloatSearchUrl: String!
+}
+
+enum RunTrigger {
+  MANUAL
+  CRON
+}
+
+enum RunStatus {
+  QUEUED
+  RUNNING
+  DONE
+  FAILED
+}
+
+enum FeedKind {
+  NEW
+  PRICE_DROP
+}
+
+type Run {
+  id: ID!
+  watchId: ID!
+  trigger: RunTrigger!
+  status: RunStatus!
+  queuedAt: DateTime!
+  startedAt: DateTime
+  finishedAt: DateTime
+  requests: Int!
+  baseline: Boolean!
+  total: Int!
+  added: [Listing!]!
+  priceChanges: [PriceChange!]!
+  goneIds: [ID!]!
+  error: String
+}
+
+type PriceChange {
+  listing: Listing!
+  before: Int!
+  after: Int!
+}
+
+type Listing {
+  id: ID!
+  name: String!
+  "USD cents"
+  price: Int!
+  type: String!
+  seed: Int
+  float: Float
+  stattrak: Boolean!
+  stickers: [String!]!
+  createdAt: DateTime!
+  csfloatUrl: String!
+  inspectLink: String
+  iconUrl: String
+}
+
+type FeedItem {
+  id: ID!
+  kind: FeedKind!
+  at: DateTime!
+  listing: Listing!
+  priceBefore: Int
+  runId: ID!
+  "Null if the watch was deleted."
+  watch: Watch
+}

@@ -1,0 +1,254 @@
+// Every query/mutation the UI uses. `pnpm codegen` scans this file and writes result and
+// variable types to ./__generated__/graphql.ts (typescript-operations, Apollo's recommended setup).
+import { gql, type TypedDocumentNode } from "@apollo/client";
+import type {
+  CreateWatchMutation,
+  CreateWatchMutationVariables,
+  DeleteWatchMutation,
+  DeleteWatchMutationVariables,
+  FeedQuery,
+  FeedQueryVariables,
+  MarkAllSeenMutation,
+  MarkAllSeenMutationVariables,
+  MarkWatchSeenMutation,
+  MarkWatchSeenMutationVariables,
+  ResumeSchedulerMutation,
+  ResumeSchedulerMutationVariables,
+  RunAllMutation,
+  RunAllMutationVariables,
+  RunWatchMutation,
+  RunWatchMutationVariables,
+  SendTestNotificationMutation,
+  SendTestNotificationMutationVariables,
+  UpdateWatchMutation,
+  UpdateWatchMutationVariables,
+  WatchDetailQuery,
+  WatchDetailQueryVariables,
+  WatchesQuery,
+  WatchesQueryVariables,
+} from "./__generated__/graphql";
+
+export const LISTING_FIELDS = gql`
+  fragment ListingFields on Listing {
+    id
+    name
+    price
+    type
+    seed
+    float
+    stattrak
+    stickers
+    createdAt
+    csfloatUrl
+    inspectLink
+    iconUrl
+  }
+`;
+
+export const SYSTEM_FIELDS = gql`
+  fragment SystemFields on SystemStatus {
+    csfloatKeyConfigured
+    discordConfigured
+    schedulerSuspended
+    suspendedReason
+    queueSize
+    timezone
+  }
+`;
+
+export const RUN_FIELDS = gql`
+  fragment RunFields on Run {
+    id
+    watchId
+    trigger
+    status
+    queuedAt
+    startedAt
+    finishedAt
+    requests
+    baseline
+    total
+    error
+    added {
+      id
+    }
+    priceChanges {
+      before
+      after
+    }
+    goneIds
+  }
+`;
+
+export const QUERY_FIELDS = gql`
+  fragment QueryFields on CsfloatQuery {
+    def_index
+    paint_index
+    market_hash_name
+    min_float
+    max_float
+    category
+    min_price
+    max_price
+    type
+    stickers
+    collection
+    rarity
+  }
+`;
+
+export const WATCH_SUMMARY = gql`
+  fragment WatchSummary on Watch {
+    id
+    name
+    seeds
+    schedule
+    enabled
+    notify
+    unreadCount
+    isRunning
+    nextRunAt
+    lastSeenAt
+    query {
+      ...QueryFields
+    }
+    lastRun {
+      ...RunFields
+    }
+  }
+  ${QUERY_FIELDS}
+  ${RUN_FIELDS}
+`;
+
+export const FEED: TypedDocumentNode<FeedQuery, FeedQueryVariables> = gql`
+  query Feed($limit: Int) {
+    feed(limit: $limit) {
+      id
+      kind
+      at
+      priceBefore
+      runId
+      listing {
+        ...ListingFields
+      }
+      watch {
+        id
+        name
+      }
+    }
+    system {
+      ...SystemFields
+    }
+  }
+  ${LISTING_FIELDS}
+  ${SYSTEM_FIELDS}
+`;
+
+export const WATCHES: TypedDocumentNode<WatchesQuery, WatchesQueryVariables> = gql`
+  query Watches {
+    watches {
+      ...WatchSummary
+    }
+    system {
+      ...SystemFields
+    }
+  }
+  ${WATCH_SUMMARY}
+  ${SYSTEM_FIELDS}
+`;
+
+export const WATCH_DETAIL: TypedDocumentNode<WatchDetailQuery, WatchDetailQueryVariables> = gql`
+  query WatchDetail($id: ID!) {
+    watch(id: $id) {
+      ...WatchSummary
+      maxPages
+      createdAt
+      updatedAt
+      csfloatSearchUrl
+      currentListings {
+        ...ListingFields
+      }
+      runs(limit: 30) {
+        ...RunFields
+      }
+    }
+  }
+  ${WATCH_SUMMARY}
+  ${LISTING_FIELDS}
+  ${RUN_FIELDS}
+`;
+
+export const CREATE_WATCH: TypedDocumentNode<CreateWatchMutation, CreateWatchMutationVariables> = gql`
+  mutation CreateWatch($input: WatchInput!) {
+    createWatch(input: $input) {
+      ...WatchSummary
+    }
+  }
+  ${WATCH_SUMMARY}
+`;
+
+export const UPDATE_WATCH: TypedDocumentNode<UpdateWatchMutation, UpdateWatchMutationVariables> = gql`
+  mutation UpdateWatch($id: ID!, $input: WatchInput!) {
+    updateWatch(id: $id, input: $input) {
+      ...WatchSummary
+      maxPages
+    }
+  }
+  ${WATCH_SUMMARY}
+`;
+
+export const DELETE_WATCH: TypedDocumentNode<DeleteWatchMutation, DeleteWatchMutationVariables> = gql`
+  mutation DeleteWatch($id: ID!) {
+    deleteWatch(id: $id)
+  }
+`;
+
+export const RUN_WATCH: TypedDocumentNode<RunWatchMutation, RunWatchMutationVariables> = gql`
+  mutation RunWatch($id: ID!) {
+    runWatch(id: $id) {
+      ...RunFields
+    }
+  }
+  ${RUN_FIELDS}
+`;
+
+export const RUN_ALL: TypedDocumentNode<RunAllMutation, RunAllMutationVariables> = gql`
+  mutation RunAll {
+    runAll {
+      id
+      watchId
+      status
+    }
+  }
+`;
+
+export const MARK_WATCH_SEEN: TypedDocumentNode<MarkWatchSeenMutation, MarkWatchSeenMutationVariables> = gql`
+  mutation MarkWatchSeen($id: ID!) {
+    markWatchSeen(id: $id) {
+      id
+      lastSeenAt
+      unreadCount
+    }
+  }
+`;
+
+export const MARK_ALL_SEEN: TypedDocumentNode<MarkAllSeenMutation, MarkAllSeenMutationVariables> = gql`
+  mutation MarkAllSeen {
+    markAllSeen
+  }
+`;
+
+export const SEND_TEST_NOTIFICATION: TypedDocumentNode<SendTestNotificationMutation, SendTestNotificationMutationVariables> = gql`
+  mutation SendTestNotification {
+    sendTestNotification
+  }
+`;
+
+export const RESUME_SCHEDULER: TypedDocumentNode<ResumeSchedulerMutation, ResumeSchedulerMutationVariables> = gql`
+  mutation ResumeScheduler {
+    resumeScheduler {
+      ...SystemFields
+    }
+  }
+  ${SYSTEM_FIELDS}
+`;

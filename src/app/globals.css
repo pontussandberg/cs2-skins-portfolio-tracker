@@ -1,0 +1,227 @@
+@import "tailwindcss";
+
+/* ---------- Claymorphism tokens ---------- */
+@theme {
+  --color-canvas: #eef0fb;
+  --color-surface: #f7f4ff;
+  --color-surface-2: #ebe7fa;
+  --color-ink: #2b2a3d;
+  --color-ink-muted: #5f5c78;
+
+  /* Blue-gem accent. Text on accent uses accent-ink (contrast > 7:1). */
+  --color-accent: #9db2ff;
+  --color-accent-ink: #141b4d;
+  --color-accent-strong: #4a63d9;
+
+  --color-mint: #b3efd6;
+  --color-mint-ink: #0f4d36;
+  --color-peach: #ffd3c6;
+  --color-peach-ink: #7a2e17;
+  --color-lemon: #ffeab0;
+  --color-lemon-ink: #634400;
+  --color-lilac: #ded6ff;
+  --color-lilac-ink: #3d2d85;
+
+  --font-sans: "Nunito Variable", "Nunito", ui-rounded, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --radius-clay: 28px;
+  --radius-control: 20px;
+  --radius-dialog: 32px;
+}
+
+:root {
+  color-scheme: light;
+  --clay:
+    10px 10px 24px rgb(92 96 140 / 0.22),
+    inset -5px -5px 10px rgb(92 96 140 / 0.14),
+    inset 5px 5px 10px rgb(255 255 255 / 0.9);
+  --clay-sm:
+    6px 6px 14px rgb(92 96 140 / 0.2),
+    inset -3px -3px 6px rgb(92 96 140 / 0.16),
+    inset 3px 3px 6px rgb(255 255 255 / 0.8);
+  --clay-lift:
+    16px 18px 34px rgb(92 96 140 / 0.26),
+    inset -5px -5px 10px rgb(92 96 140 / 0.14),
+    inset 5px 5px 10px rgb(255 255 255 / 0.9);
+  --clay-pressed:
+    inset 5px 5px 10px rgb(92 96 140 / 0.22),
+    inset -5px -5px 10px rgb(255 255 255 / 0.75);
+  --clay-dialog:
+    24px 28px 60px rgb(40 42 80 / 0.35),
+    inset -6px -6px 12px rgb(92 96 140 / 0.14),
+    inset 6px 6px 12px rgb(255 255 255 / 0.9);
+}
+
+/* Dark: deep indigo base, low-alpha highlights. Tuned separately, not inverted. */
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --color-canvas: #1e1f2e;
+    --color-surface: #292a3d;
+    --color-surface-2: #222333;
+    --color-ink: #ecebf7;
+    --color-ink-muted: #b0aecb;
+    --color-accent: #7f95f2;
+    --color-accent-ink: #0c1238;
+    --color-accent-strong: #a9b9ff;
+    --color-mint: #2a6a54;
+    --color-mint-ink: #d4fbeb;
+    --color-peach: #74382a;
+    --color-peach-ink: #ffe0d6;
+    --color-lemon: #62501a;
+    --color-lemon-ink: #fff1c4;
+    --color-lilac: #433a7c;
+    --color-lilac-ink: #e7e1ff;
+
+    --clay:
+      10px 10px 24px rgb(0 0 0 / 0.45),
+      inset -5px -5px 10px rgb(0 0 0 / 0.3),
+      inset 5px 5px 10px rgb(255 255 255 / 0.06);
+    --clay-sm:
+      6px 6px 14px rgb(0 0 0 / 0.4),
+      inset -3px -3px 6px rgb(0 0 0 / 0.3),
+      inset 3px 3px 6px rgb(255 255 255 / 0.07);
+    --clay-lift:
+      16px 18px 34px rgb(0 0 0 / 0.5),
+      inset -5px -5px 10px rgb(0 0 0 / 0.3),
+      inset 5px 5px 10px rgb(255 255 255 / 0.07);
+    --clay-pressed:
+      inset 5px 5px 10px rgb(0 0 0 / 0.45),
+      inset -5px -5px 10px rgb(255 255 255 / 0.05);
+    --clay-dialog:
+      24px 28px 60px rgb(0 0 0 / 0.6),
+      inset -6px -6px 12px rgb(0 0 0 / 0.3),
+      inset 6px 6px 12px rgb(255 255 255 / 0.06);
+  }
+}
+
+@layer base {
+  html,
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+  }
+  :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-accent-strong);
+    outline-offset: 3px;
+  }
+  ::selection {
+    background: var(--color-accent);
+    color: var(--color-accent-ink);
+  }
+}
+
+@layer components {
+  .clay {
+    background: var(--color-surface);
+    border-radius: var(--radius-clay);
+    box-shadow: var(--clay);
+  }
+  .clay-sm {
+    border-radius: var(--radius-control);
+    box-shadow: var(--clay-sm);
+  }
+  .clay-well {
+    background: var(--color-surface-2);
+    border-radius: 16px;
+    box-shadow: var(--clay-pressed);
+  }
+  .clay-dialog {
+    background: var(--color-surface);
+    border-radius: var(--radius-dialog);
+    box-shadow: var(--clay-dialog);
+  }
+  .clay-lift {
+    transition:
+      transform 150ms ease,
+      box-shadow 150ms ease;
+  }
+  .clay-lift:hover {
+    transform: scale(1.02);
+    box-shadow: var(--clay-lift);
+  }
+
+  .clay-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: var(--radius-control);
+    font-weight: 700;
+    line-height: 1.1;
+    box-shadow: var(--clay-sm);
+    transition:
+      transform 150ms ease,
+      box-shadow 150ms ease,
+      opacity 150ms ease;
+    cursor: pointer;
+    user-select: none;
+  }
+  .clay-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+  .clay-btn:active:not(:disabled) {
+    transform: translateY(1px);
+    box-shadow: var(--clay-pressed);
+  }
+  .clay-btn:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+  }
+
+  .clay-input {
+    width: 100%;
+    background: var(--color-surface-2);
+    border-radius: 16px;
+    box-shadow: var(--clay-pressed);
+    padding: 0.7rem 1rem;
+    color: var(--color-ink);
+    border: 0;
+  }
+  .clay-input::placeholder {
+    color: var(--color-ink-muted);
+    opacity: 0.8;
+  }
+
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@keyframes clay-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+.animate-clay-pulse {
+  animation: clay-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes clay-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-clay-spin {
+  animation: clay-spin 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+  .clay-lift:hover,
+  .clay-btn:hover:not(:disabled),
+  .clay-btn:active:not(:disabled) {
+    transform: none;
+  }
+}

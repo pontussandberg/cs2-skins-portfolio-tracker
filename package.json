@@ -1,0 +1,63 @@
+{
+  "name": "csfloat-watcher",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "postinstall": "graphql-codegen",
+    "codegen": "graphql-codegen",
+    "codegen:watch": "graphql-codegen --watch",
+    "dev": "concurrently -k -n next,codegen -c blue,magenta \"next dev\" \"graphql-codegen --watch\"",
+    "build": "graphql-codegen && next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "watch:run": "tsx scripts/run-watch.ts",
+    "spike": "tsx scripts/spike.ts"
+  },
+  "dependencies": {
+    "@apollo/client": "^4.0.0",
+    "@apollo/client-integration-nextjs": ">=0.13.0",
+    "@apollo/server": ">=4.12.0 <6",
+    "@fontsource-variable/nunito": "^5.1.0",
+    "@fontsource/jetbrains-mono": "^5.1.0",
+    "clsx": "^2.1.1",
+    "croner": "^9.1.0",
+    "graphql": "^16.11.0",
+    "next": "^16.0.0",
+    "p-queue": "^8.1.0",
+    "pino": "^9.6.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "rxjs": "^7.8.2",
+    "zod": "^4.0.0"
+  },
+  "devDependencies": {
+    "@graphql-codegen/cli": ">=5.0.0",
+    "@graphql-codegen/typescript": ">=4.1.0",
+    "@graphql-codegen/typescript-operations": "^6.0.0",
+    "@graphql-codegen/typescript-resolvers": ">=4.5.0",
+    "@tailwindcss/postcss": "^4.1.0",
+    "@types/node": "^22.10.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "concurrently": "^9.1.0",
+    "tailwindcss": "^4.1.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^3.2.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "sharp",
+      "@parcel/watcher",
+      "@tailwindcss/oxide"
+    ]
+  }
+}
