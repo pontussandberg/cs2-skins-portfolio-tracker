@@ -27,8 +27,6 @@
     "@dnd-kit/core": "6.3.1",
     "@dnd-kit/sortable": "10.0.0",
     "@dnd-kit/utilities": "3.2.2",
-    "@fontsource/jetbrains-mono": "^5.1.0",
-    "clsx": "^2.1.1",
     "croner": "^9.1.0",
     "graphql": "^16.11.0",
     "next": "^16.0.0",
@@ -37,6 +35,7 @@
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "rxjs": "^7.8.2",
+    "styled-components": "6.5.3",
     "zod": "^4.0.0"
   },
   "devDependencies": {
@@ -45,12 +44,10 @@
     "@graphql-codegen/typescript-operations": "^6.1.7",
     "@graphql-codegen/typescript-resolvers": "^6.1.0",
     "@parcel/watcher": "^2.6.0",
-    "@tailwindcss/postcss": "^4.1.0",
     "@types/node": "^22.10.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "concurrently": "^9.1.0",
-    "tailwindcss": "^4.1.0",
     "tsx": "^4.20.0",
     "typescript": "^5.9.0",
     "vitest": "^3.2.0"
@@ -59,8 +56,7 @@
     "onlyBuiltDependencies": [
       "esbuild",
       "sharp",
-      "@parcel/watcher",
-      "@tailwindcss/oxide"
+      "@parcel/watcher"
     ],
     "ignoredBuiltDependencies": [
       "@apollo/protobufjs"

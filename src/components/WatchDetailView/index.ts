@@ -1,0 +1,1 @@
+export { WatchDetailView } from "./WatchDetailView";

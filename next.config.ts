@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
   },
   // Keep pino as a plain Node dependency instead of bundling it.
   serverExternalPackages: ["pino", "thread-stream"],
+  // SWC transform for styled-components: SSR-safe class names and readable names in dev.
+  compiler: {
+    styledComponents: true,
+  },
 };
 
 export default nextConfig;
