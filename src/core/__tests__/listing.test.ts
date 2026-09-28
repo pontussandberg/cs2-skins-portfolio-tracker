@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sortListings } from "../listing";
+import { sortListings, stickerPercent } from "../listing";
 import { snap } from "./fixtures";
 
 describe("sortListings", () => {
@@ -19,5 +19,25 @@ describe("sortListings", () => {
 
   it("keeps CSFloat's order for sorts it cannot reproduce", () => {
     expect(ids("best_deal")).toEqual(["mid", "none", "low"]);
+  });
+});
+
+describe("stickerPercent", () => {
+  const sticker = (price: number | null) => ({ name: "Sticker | X", iconUrl: null, slot: 0, wear: null, price });
+
+  it("is the premium over the base price as a share of sticker value", () => {
+    // $150 asked, $100 base, 4 × $50 stickers: $50 extra of $200 sticker value = 25%.
+    expect(stickerPercent({ price: 15_000, basePrice: 10_000, stickerDetails: [50, 50, 50, 50].map((d) => sticker(d * 100)) })).toBe(25);
+    expect(stickerPercent({ price: 9_000, basePrice: 10_000, stickerDetails: [sticker(5_000)] })).toBe(-20);
+  });
+
+  it("prefers CSFloat's own sticker total", () => {
+    expect(stickerPercent({ price: 15_000, basePrice: 10_000, stickerValue: 10_000, stickerDetails: [sticker(20_000)] })).toBe(50);
+  });
+
+  it("is unknown without a base price or priced stickers", () => {
+    expect(stickerPercent({ price: 15_000, basePrice: null, stickerDetails: [sticker(5_000)] })).toBeNull();
+    expect(stickerPercent({ price: 15_000, basePrice: 10_000, stickerDetails: [sticker(null)] })).toBeNull();
+    expect(stickerPercent({ price: 15_000, basePrice: 10_000 })).toBeNull();
   });
 });

@@ -1,4 +1,3 @@
-import "@fontsource-variable/nunito";
 import "@fontsource/jetbrains-mono/400.css";
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
@@ -13,10 +12,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#eef0fb" },
-    { media: "(prefers-color-scheme: dark)", color: "#1e1f2e" },
-  ],
+  themeColor: "#2e3440",
 };
 
 // Everything is live data from this server; never prerender at build time.
@@ -28,7 +24,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       <body className="min-h-dvh antialiased">
         <ApolloWrapper>
           <Nav />
-          <main className="mx-auto w-full max-w-6xl px-4 pb-24 pt-8 sm:px-6">{children}</main>
+          <main className="mx-auto w-full max-w-7xl px-4 pb-24 pt-6 sm:px-6">{children}</main>
           <LiveUpdates />
         </ApolloWrapper>
       </body>

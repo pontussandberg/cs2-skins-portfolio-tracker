@@ -64,6 +64,11 @@ export const CATEGORY_LABELS: Record<number, string> = {
   3: "Souvenir",
 };
 
+/** CSFloat search presets (`filter=`) we have a label for; others show their raw value. */
+export const FILTER_LABELS: Record<string, string> = {
+  sticker_combos: "Sticker combos",
+};
+
 export const SORT_LABELS: Record<SortBy, string> = {
   most_recent: "Newest",
   lowest_price: "Lowest price",
@@ -103,6 +108,11 @@ export function parseStickerFilter(text: string | null | undefined): { id: numbe
   } catch {
     return null;
   }
+}
+
+/** Sticker percentage as CSFloat labels it: "12% SP". */
+export function formatStickerPercent(percent: number): string {
+  return `${Math.round(percent)}% SP`;
 }
 
 /** "Sticker | Titan (Foil) | Cologne 2015" -> "Titan (Foil) | Cologne 2015". */
@@ -152,5 +162,6 @@ export function describeQuery(q: QueryLike): string[] {
   }
   if (q.collection) out.push(q.collection);
   if (q.rarity != null) out.push(`Rarity ${q.rarity}`);
+  if (q.filter) out.push(FILTER_LABELS[q.filter] ?? q.filter);
   return out;
 }

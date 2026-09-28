@@ -28,14 +28,14 @@ export function RunStatusBadge({ run, running }: { run: RunView | null | undefin
     );
   }
   if (!run) return <Badge>Never run</Badge>;
-  if (run.status === "FAILED") return <Badge tone="peach" title={run.error ?? undefined}>Failed</Badge>;
-  if (run.baseline) return <Badge tone="lilac">Baseline</Badge>;
+  if (run.status === "FAILED") return <Badge tone="danger" title={run.error ?? undefined}>Failed</Badge>;
+  if (run.baseline) return <Badge tone="info">Baseline</Badge>;
   return <Badge tone="neutral">OK</Badge>;
 }
 
 export function RunSummaryLine({ run }: { run: RunView | null | undefined }) {
   if (!run) return <span className="text-ink-muted">No runs yet</span>;
-  if (run.status === "FAILED") return <span className="text-peach-ink">Failed {timeAgo(run.finishedAt)}: {run.error}</span>;
+  if (run.status === "FAILED") return <span className="text-danger-ink">Failed {timeAgo(run.finishedAt)}: {run.error}</span>;
   if (run.status !== "DONE") return <span className="text-ink-muted">Started {timeAgo(run.startedAt ?? run.queuedAt)}</span>;
   if (run.baseline) return <span className="text-ink-muted">Baseline of {run.total} listings, {timeAgo(run.finishedAt)}</span>;
   const drops = run.priceChanges.filter((p) => p.after < p.before).length;

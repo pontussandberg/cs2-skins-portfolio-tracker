@@ -1,5 +1,6 @@
 import { mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { applyOrder } from "@/core/order";
 import type { QueryState, RunRecord, Watch } from "@/core/types";
 import type { Store } from "./Store";
 
@@ -29,18 +30,27 @@ export class FileStore implements Store {
 
   // ---- watches ----
 
+  // Every loaded watch has a position (see loadWatches), so ordering is just by position.
   async listWatches(): Promise<Watch[]> {
     const map = await this.loadWatches();
-    return [...map.values()].sort((a, b) => a.name.localeCompare(b.name));
+    return [...map.values()].sort((a, b) => a.position! - b.position!);
   }
 
   async getWatch(id: string): Promise<Watch | null> {
     return (await this.loadWatches()).get(id) ?? null;
   }
 
+  /** A watch saved without a position (i.e. a new one) goes last. */
   async saveWatch(watch: Watch): Promise<void> {
     const map = await this.loadWatches();
-    map.set(watch.id, watch);
+    const position = watch.position ?? map.get(watch.id)?.position ?? Math.max(-1, ...[...map.values()].map((w) => w.position!)) + 1;
+    map.set(watch.id, { ...watch, position });
+    await this.writeJson("watches.json", [...map.values()]);
+  }
+
+  async reorderWatches(ids: string[]): Promise<void> {
+    const map = await this.loadWatches();
+    applyOrder(await this.listWatches(), ids).forEach((w, position) => map.set(w.id, { ...w, position }));
     await this.writeJson("watches.json", [...map.values()]);
   }
 
@@ -102,7 +112,10 @@ export class FileStore implements Store {
   private async loadWatches(): Promise<Map<string, Watch>> {
     if (!this.watches) {
       const list = (await this.readJson<Watch[]>("watches.json")) ?? [];
-      this.watches = new Map(list.map((w) => [w.id, w]));
+      // Normalise order once: saved positions first, then watches from before ordering existed, by name.
+      const unordered = Number.MAX_SAFE_INTEGER;
+      list.sort((a, b) => (a.position ?? unordered) - (b.position ?? unordered) || a.name.localeCompare(b.name));
+      this.watches = new Map(list.map((w, position) => [w.id, { ...w, position }]));
     }
     return this.watches;
   }

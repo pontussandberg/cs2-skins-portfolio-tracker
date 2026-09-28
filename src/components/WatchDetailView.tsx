@@ -1,13 +1,12 @@
 "use client";
 
 import { useMutation, useQuery } from "@apollo/client/react";
-import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { describeSchedule, sortLabel, timeAgo } from "@/core/format";
 import { MARK_WATCH_SEEN, RUN_WATCH, WATCH_DETAIL } from "@/graphql/operations";
 import { DeleteWatchButton } from "./DeleteWatchButton";
-import { ListingCard } from "./ListingCard";
+import { LISTING_GRID, ListingCard } from "./ListingCard";
 import { RunStatusBadge, RunSummaryLine } from "./RunStatus";
 import { Badge, Button, Card, EmptyState, ErrorNote, LinkButton, Skeleton } from "./ui";
 import { WatchForm } from "./WatchForm";
@@ -38,8 +37,8 @@ export function WatchDetailView({ id }: { id: string }) {
   if (loading && !data) {
     return (
       <div className="flex flex-col gap-6">
-        <Skeleton className="h-40 rounded-[28px]" />
-        <Skeleton className="h-96 rounded-[28px]" />
+        <Skeleton className="h-36" />
+        <Skeleton className="h-96" />
       </div>
     );
   }
@@ -52,19 +51,19 @@ export function WatchDetailView({ id }: { id: string }) {
   const sort = sortLabel(watch.query.sort_by);
 
   return (
-    <div className="flex flex-col gap-6">
-      <Card className="flex flex-col gap-5">
+    <div className="flex flex-col gap-5">
+      <Card className="flex flex-col gap-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">
-            <h1 className="text-2xl font-black tracking-tight sm:text-3xl">{watch.name}</h1>
-            <p className="mt-1 text-sm text-ink-muted">
+            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{watch.name}</h1>
+            <p className="mt-1 text-xs text-ink-muted">
               {describeSchedule(watch.schedule)}
               {watch.nextRunAt ? ` · next run ${timeAgo(watch.nextRunAt)}` : ""}
               {!watch.enabled ? " · disabled" : ""}
               {sort ? ` · sorted by ${sort.toLowerCase()}` : ""} · Discord {watch.notify ? "on" : "off"} · up to {watch.maxPages} page{watch.maxPages === 1 ? "" : "s"} per seed
             </p>
           </div>
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-2">
             <Button tone="primary" busy={running} onClick={() => runWatch({ variables: { id } }).catch(ignore)}>
               {running ? "Running" : "Run now"}
             </Button>
@@ -82,7 +81,7 @@ export function WatchDetailView({ id }: { id: string }) {
         {watch.seeds.length ? (
           <div className="flex flex-wrap gap-1.5">
             {watch.seeds.map((s) => (
-              <Badge key={s} tone="lilac">
+              <Badge key={s} tone="info">
                 #{s}
               </Badge>
             ))}
@@ -91,7 +90,7 @@ export function WatchDetailView({ id }: { id: string }) {
         <ErrorNote error={runState.error} />
       </Card>
 
-      <div className="clay flex w-fit gap-1 rounded-full p-1.5" role="tablist">
+      <div className="flex gap-1 border-b border-line" role="tablist">
         {(
           [
             ["listings", `Listings (${watch.currentListings.length})`],
@@ -104,7 +103,7 @@ export function WatchDetailView({ id }: { id: string }) {
             role="tab"
             aria-selected={tab === key}
             onClick={() => setTab(key)}
-            className={clsx("rounded-full px-4 py-2 text-sm font-bold transition", tab === key ? "clay-sm bg-accent text-accent-ink" : "text-ink-muted hover:text-ink")}
+            className="tab -mb-px py-2"
           >
             {label}
           </button>
@@ -115,7 +114,7 @@ export function WatchDetailView({ id }: { id: string }) {
         watch.currentListings.length === 0 ? (
           <EmptyState title="No listings yet" body="Run the watch to fetch the current results. The first run saves a baseline." />
         ) : (
-          <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <ul className={LISTING_GRID}>
             {watch.currentListings.map((l) => (
               <li key={l.id} className="grid">
                 <ListingCard listing={l} kind={newIds.has(l.id) ? "NEW" : null} />
@@ -129,10 +128,10 @@ export function WatchDetailView({ id }: { id: string }) {
         watch.runs.length === 0 ? (
           <EmptyState title="No runs yet" />
         ) : (
-          <Card className="overflow-x-auto p-3 sm:p-4">
-            <table className="w-full min-w-[640px] border-separate border-spacing-y-1.5 text-sm">
+          <Card className="overflow-x-auto p-0">
+            <table className="w-full min-w-[640px] text-sm">
               <thead>
-                <tr className="text-left text-xs font-bold uppercase tracking-wider text-ink-muted">
+                <tr className="border-b border-line text-left text-xs font-medium uppercase tracking-wide text-ink-muted">
                   <th className="px-3 py-2">When</th>
                   <th className="px-3 py-2">Trigger</th>
                   <th className="px-3 py-2">Status</th>
@@ -144,18 +143,18 @@ export function WatchDetailView({ id }: { id: string }) {
                 </tr>
               </thead>
               <tbody>
-                {watch.runs.map((r, i) => (
-                  <tr key={r.id} className={i % 2 ? "bg-surface-2/60" : ""} title={r.error ?? undefined}>
-                    <td className="rounded-l-2xl px-3 py-2">{timeAgo(r.finishedAt ?? r.startedAt ?? r.queuedAt)}</td>
+                {watch.runs.map((r) => (
+                  <tr key={r.id} className="border-b border-line last:border-0 hover:bg-surface-2/50" title={r.error ?? undefined}>
+                    <td className="px-3 py-2">{timeAgo(r.finishedAt ?? r.startedAt ?? r.queuedAt)}</td>
                     <td className="px-3 py-2 capitalize">{r.trigger.toLowerCase()}</td>
                     <td className="px-3 py-2">
                       <RunStatusBadge run={r} />
                     </td>
-                    <td className="tabular px-3 py-2 text-right font-bold">{r.added.length}</td>
+                    <td className="tabular px-3 py-2 text-right font-semibold">{r.added.length}</td>
                     <td className="tabular px-3 py-2 text-right">{r.priceChanges.length}</td>
                     <td className="tabular px-3 py-2 text-right">{r.goneIds.length}</td>
                     <td className="tabular px-3 py-2 text-right">{r.total}</td>
-                    <td className="tabular rounded-r-2xl px-3 py-2 text-right">{r.requests}</td>
+                    <td className="tabular px-3 py-2 text-right">{r.requests}</td>
                   </tr>
                 ))}
               </tbody>
@@ -180,10 +179,10 @@ export function WatchDetailView({ id }: { id: string }) {
             }}
             onSaved={() => setTab("listings")}
           />
-          <Card className="flex flex-wrap items-center justify-between gap-4 bg-peach text-peach-ink">
+          <Card className="flex flex-wrap items-center justify-between gap-4 border-danger-ink/30">
             <div>
-              <h2 className="font-extrabold">Delete this watch</h2>
-              <p className="text-sm">Removes the watch and its run history. Seen-sets for its queries stay on disk.</p>
+              <h2 className="font-semibold">Delete this watch</h2>
+              <p className="text-sm text-ink-muted">Removes the watch and its run history. Seen-sets for its queries stay on disk.</p>
             </div>
             <DeleteWatchButton watch={watch} onDeleted={() => router.push("/watches")} />
           </Card>

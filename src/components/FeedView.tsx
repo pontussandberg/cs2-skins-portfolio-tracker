@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery } from "@apollo/client/react";
 import { FEED, MARK_ALL_SEEN, RUN_ALL } from "@/graphql/operations";
-import { ListingCard } from "./ListingCard";
+import { LISTING_GRID, ListingCard } from "./ListingCard";
 import { SystemBanner } from "./SystemBanner";
 import { Button, EmptyState, ErrorNote, LinkButton, Skeleton } from "./ui";
 import { ignore } from "@/lib/ignore";
@@ -20,14 +20,14 @@ export function FeedView() {
     <div>
       <SystemBanner system={data?.system} />
 
-      <section className="mb-8 flex flex-wrap items-end justify-between gap-4">
+      <section className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-black tracking-tight sm:text-4xl">What&apos;s new</h1>
-          <p className="mt-1 text-ink-muted">
+          <h1 className="text-2xl font-semibold tracking-tight">What&apos;s new</h1>
+          <p className="mt-1 text-sm text-ink-muted">
             {feed.length ? `${newCount} new listing${newCount === 1 ? "" : "s"} and ${dropCount} price drop${dropCount === 1 ? "" : "s"} across your watches.` : "New listings from every watch land here."}
           </p>
         </div>
-        <div className="flex gap-3">
+        <div className="flex gap-2">
           <Button onClick={() => markAll().catch(ignore)} busy={markAllState.loading}>
             Mark all read
           </Button>
@@ -40,9 +40,9 @@ export function FeedView() {
       <ErrorNote error={error ?? runAllState.error} />
 
       {loading && !data ? (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className={LISTING_GRID}>
           {Array.from({ length: 6 }, (_, i) => (
-            <Skeleton key={i} className="h-64 rounded-[28px]" />
+            <Skeleton key={i} className="aspect-[3/4]" />
           ))}
         </div>
       ) : feed.length === 0 ? (
@@ -50,13 +50,13 @@ export function FeedView() {
           title="Nothing new yet"
           body="Create a watch, run it once to save a baseline, and anything listed after that shows up here (and in Discord)."
           action={
-            <LinkButton href="/watches/new" tone="mint">
+            <LinkButton href="/watches/new" tone="primary">
               Create a watch
             </LinkButton>
           }
         />
       ) : (
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className={LISTING_GRID}>
           {feed.map((item) => (
             <ListingCard key={item.id} listing={item.listing} kind={item.kind === "PRICE_DROP" ? "PRICE_DROP" : "NEW"} priceBefore={item.priceBefore} watch={item.watch} />
           ))}

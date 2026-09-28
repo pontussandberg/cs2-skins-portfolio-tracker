@@ -35,6 +35,8 @@ export interface Runtime {
   createWatch(input: unknown): Promise<Watch>;
   updateWatch(id: string, input: unknown): Promise<Watch>;
   deleteWatch(id: string): Promise<boolean>;
+  /** Save the dashboard order; returns all watches in the new order. */
+  reorderWatches(ids: string[]): Promise<Watch[]>;
   markWatchSeen(id: string): Promise<Watch>;
 }
 
@@ -142,6 +144,15 @@ export function createRuntime(opts: CreateRuntimeOptions = {}): Runtime {
       scheduler.sync(watch);
       bus.emit({ type: "watches.changed" });
       return watch;
+    },
+
+    async reorderWatches(ids) {
+      for (const id of ids) {
+        if (!(await store.getWatch(id))) throw new Error(`Watch not found: ${id}`);
+      }
+      await store.reorderWatches(ids);
+      bus.emit({ type: "watches.changed" });
+      return store.listWatches();
     },
 
     async deleteWatch(id) {

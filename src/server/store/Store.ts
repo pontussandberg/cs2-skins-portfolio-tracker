@@ -7,10 +7,13 @@ import type { QueryState, RunRecord, Watch } from "@/core/types";
 export interface Store {
   init(): Promise<void>;
 
+  /** In custom order (position), then by name. */
   listWatches(): Promise<Watch[]>;
   getWatch(id: string): Promise<Watch | null>;
   saveWatch(watch: Watch): Promise<void>;
   deleteWatch(id: string): Promise<void>;
+  /** Store a custom order: `ids` first in that order, any others after them. */
+  reorderWatches(ids: string[]): Promise<void>;
 
   getQueryState(hash: string): Promise<QueryState | null>;
   saveQueryStates(states: QueryState[]): Promise<void>;

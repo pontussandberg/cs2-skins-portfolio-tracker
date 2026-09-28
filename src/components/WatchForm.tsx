@@ -4,7 +4,7 @@ import { useMutation } from "@apollo/client/react";
 import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { parseCsfloatSearchUrl, parseSeedList } from "@/core/csfloatUrl";
-import { SCHEDULE_PRESETS, SORT_LABELS } from "@/core/format";
+import { FILTER_LABELS, SCHEDULE_PRESETS, SORT_LABELS } from "@/core/format";
 import { CSFLOAT_SORTS, DEFAULT_SORT, isSortBy, sortOf, type CsfloatQuery, type SortBy } from "@/core/types";
 import type { CreateWatchMutationVariables } from "@/graphql/__generated__/graphql";
 import { CREATE_WATCH, UPDATE_WATCH } from "@/graphql/operations";
@@ -46,6 +46,7 @@ function initialState(initial?: WatchFormInitial) {
     stickers: str(q.stickers),
     collection: str(q.collection),
     rarity: str(q.rarity),
+    filter: str(q.filter),
     sort_by: isSortBy(q.sort_by) ? q.sort_by : DEFAULT_SORT,
     seeds: (initial?.seeds ?? []).join(", "),
     schedule: preset ? (preset.value ?? MANUAL) : CUSTOM,
@@ -88,6 +89,7 @@ function toInput(s: FormState): WatchInputVars {
       stickers: s.stickers.trim() || null,
       collection: s.collection.trim() || null,
       rarity: int(s.rarity),
+      filter: s.filter || null,
       sort_by: s.sort_by,
     },
     seeds: parseSeedList(s.seeds),
@@ -131,6 +133,7 @@ export function WatchForm({ mode, initial, onSaved }: { mode: "create" | "edit";
       stickers: str(q.stickers),
       collection: str(q.collection),
       rarity: str(q.rarity),
+      filter: str(q.filter),
       sort_by: sortOf(q),
       seeds: parsed.seeds.length ? parsed.seeds.join(", ") : prev.seeds,
     }));
@@ -164,7 +167,7 @@ export function WatchForm({ mode, initial, onSaved }: { mode: "create" | "edit";
             Import
           </Button>
         </div>
-        {importNote ? <p className="text-sm font-semibold text-mint-ink">{importNote}</p> : null}
+        {importNote ? <p className="text-sm text-success-ink">{importNote}</p> : null}
       </Card>
 
       <Card className="grid gap-5 sm:grid-cols-2">
@@ -215,6 +218,17 @@ export function WatchForm({ mode, initial, onSaved }: { mode: "create" | "edit";
             <option value="">Buy now + auctions</option>
             <option value="buy_now">Buy now only</option>
             <option value="auction">Auctions only</option>
+          </Select>
+        </Field>
+        <Field label="Preset" htmlFor={id("filter")} hint="CSFloat's search presets, e.g. only listings with 4+ of the same sticker.">
+          <Select id={id("filter")} value={s.filter} onChange={(e) => set("filter", e.target.value)}>
+            <option value="">None</option>
+            {Object.entries(FILTER_LABELS).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+            {s.filter && !(s.filter in FILTER_LABELS) ? <option value={s.filter}>{s.filter}</option> : null}
           </Select>
         </Field>
         <Field
@@ -275,7 +289,7 @@ export function WatchForm({ mode, initial, onSaved }: { mode: "create" | "edit";
             <Input id={id("pages")} inputMode="numeric" value={s.maxPages} onChange={(e) => set("maxPages", e.target.value)} />
           </Field>
         ) : null}
-        <div className="clay-well flex flex-col gap-2 p-4 sm:col-span-2">
+        <div className="well flex flex-col gap-2 p-3 sm:col-span-2">
           <Toggle id={id("enabled")} checked={s.enabled} onChange={(v) => set("enabled", v)} label="Enabled" description="Disabled watches skip cron and Run all." />
           <Toggle id={id("notify")} checked={s.notify} onChange={(v) => set("notify", v)} label="Post new items to Discord" description="Uses DISCORD_WEBHOOK_URL from the server config." />
         </div>
@@ -300,7 +314,7 @@ export function WatchForm({ mode, initial, onSaved }: { mode: "create" | "edit";
 function SectionTitle({ title, hint, className }: { title: string; hint?: ReactNode; className?: string }) {
   return (
     <div className={className}>
-      <h2 className="text-lg font-extrabold">{title}</h2>
+      <h2 className="text-sm font-semibold">{title}</h2>
       {hint ? <p className="text-sm text-ink-muted">{hint}</p> : null}
     </div>
   );

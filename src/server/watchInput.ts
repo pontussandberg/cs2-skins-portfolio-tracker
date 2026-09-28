@@ -15,14 +15,15 @@ const QuerySchema = z
     stickers: z.string().trim().max(500).nullish(),
     collection: z.string().trim().max(100).nullish(),
     rarity: z.number().int().min(0).max(10).nullish(),
+    filter: z.string().trim().max(50).nullish(),
     // most_recent is the default, so it is stored as "no sort".
     sort_by: z
       .enum(CSFLOAT_SORTS)
       .nullish()
       .transform((v) => (v === DEFAULT_SORT ? null : v)),
   })
-  .refine((q) => q.def_index != null || q.paint_index != null || Boolean(q.market_hash_name) || Boolean(q.collection) || Boolean(q.stickers), {
-    message: "Set at least one of def_index, paint_index, market_hash_name, collection or stickers",
+  .refine((q) => q.def_index != null || q.paint_index != null || Boolean(q.market_hash_name) || Boolean(q.collection) || Boolean(q.stickers) || Boolean(q.filter), {
+    message: "Set at least one of def_index, paint_index, market_hash_name, collection, stickers or filter",
   })
   .refine((q) => q.min_float == null || q.max_float == null || q.min_float <= q.max_float, {
     message: "min_float must be <= max_float",

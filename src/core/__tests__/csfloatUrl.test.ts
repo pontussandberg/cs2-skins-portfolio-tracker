@@ -31,6 +31,12 @@ describe("parseCsfloatSearchUrl", () => {
     expect(r.ignored).toEqual([]);
   });
 
+  it("keeps CSFloat's filter preset", () => {
+    const r = parseCsfloatSearchUrl("https://csfloat.com/search?def_index=7&filter=sticker_combos&sort_by=lowest_price");
+    expect(r.query).toEqual({ def_index: 7, filter: "sticker_combos", sort_by: "lowest_price" });
+    expect(r.ignored).toEqual([]);
+  });
+
   it("accepts a bare query string", () => {
     expect(parseCsfloatSearchUrl("market_hash_name=AK-47%20%7C%20Redline%20(Field-Tested)").query).toEqual({
       market_hash_name: "AK-47 | Redline (Field-Tested)",

@@ -1,99 +1,51 @@
 @import "tailwindcss";
 
-/* ---------- Claymorphism tokens ---------- */
+/*
+ * ---------- Market layout in the Nord palette (https://www.nordtheme.com) ----------
+ * Polar Night nord0-3 for backgrounds, Snow Storm nord4-6 for text, Frost nord7-10 as accent,
+ * Aurora nord11-15 for status. Mapped like the Nord VS Code theme: page on nord0, panels on nord1.
+ */
 @theme {
-  --color-canvas: #eef0fb;
-  --color-surface: #f7f4ff;
-  --color-surface-2: #ebe7fa;
-  --color-ink: #2b2a3d;
-  --color-ink-muted: #5f5c78;
+  --color-canvas: #2e3440; /* nord0 */
+  --color-surface: #3b4252; /* nord1 */
+  --color-surface-2: #434c5e; /* nord2 */
+  --color-line: #434c5e; /* nord2 */
+  --color-line-strong: #4c566a; /* nord3 */
+  --color-ink: #e5e9f0; /* nord5 */
+  /* Between nord3 and nord4: Nord's own comment grey is too faint for body text (>= 4.5:1 here). */
+  --color-ink-muted: #a3adbf;
 
-  /* Blue-gem accent. Text on accent uses accent-ink (contrast > 7:1). */
-  --color-accent: #9db2ff;
-  --color-accent-ink: #141b4d;
-  --color-accent-strong: #4a63d9;
+  /* Frost accent: fills (dark text on it, 7:1), links and highlights. */
+  --color-accent: #88c0d0; /* nord8 */
+  --color-accent-hover: #8fbcbb; /* nord7 */
+  --color-accent-ink: #2e3440; /* nord0 */
 
-  --color-mint: #b3efd6;
-  --color-mint-ink: #0f4d36;
-  --color-peach: #ffd3c6;
-  --color-peach-ink: #7a2e17;
-  --color-lemon: #ffeab0;
-  --color-lemon-ink: #634400;
-  --color-lilac: #ded6ff;
-  --color-lilac-ink: #3d2d85;
+  /* Status: Aurora text on a faint Aurora tint of the panel colour. */
+  --color-success: color-mix(in srgb, #a3be8c 16%, #3b4252);
+  --color-success-ink: #a3be8c; /* nord14 green */
+  --color-danger: color-mix(in srgb, #bf616a 18%, #3b4252);
+  --color-danger-ink: #d08b92; /* nord11 red, lightened for contrast on nord1 */
+  --color-warning: color-mix(in srgb, #ebcb8b 14%, #3b4252);
+  --color-warning-ink: #ebcb8b; /* nord13 yellow */
+  --color-info: color-mix(in srgb, #b48ead 18%, #3b4252);
+  --color-info-ink: #c6a5c0; /* nord15 purple, lightened */
 
-  --font-sans: "Nunito Variable", "Nunito", ui-rounded, system-ui, sans-serif;
+  /* Wear ranges on the float bar (FN, MW, FT, WW, BS): Aurora/Frost from green to red. */
+  --color-wear-fn: #a3be8c; /* nord14 */
+  --color-wear-mw: #8fbcbb; /* nord7 */
+  --color-wear-ft: #ebcb8b; /* nord13 */
+  --color-wear-ww: #d08770; /* nord12 */
+  --color-wear-bs: #bf616a; /* nord11 */
+
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
-  --radius-clay: 28px;
-  --radius-control: 20px;
-  --radius-dialog: 32px;
+  --radius-card: 10px;
+  --radius-control: 8px;
 }
 
 :root {
-  color-scheme: light;
-  --clay:
-    10px 10px 24px rgb(92 96 140 / 0.22),
-    inset -5px -5px 10px rgb(92 96 140 / 0.14),
-    inset 5px 5px 10px rgb(255 255 255 / 0.9);
-  --clay-sm:
-    6px 6px 14px rgb(92 96 140 / 0.2),
-    inset -3px -3px 6px rgb(92 96 140 / 0.16),
-    inset 3px 3px 6px rgb(255 255 255 / 0.8);
-  --clay-lift:
-    16px 18px 34px rgb(92 96 140 / 0.26),
-    inset -5px -5px 10px rgb(92 96 140 / 0.14),
-    inset 5px 5px 10px rgb(255 255 255 / 0.9);
-  --clay-pressed:
-    inset 5px 5px 10px rgb(92 96 140 / 0.22),
-    inset -5px -5px 10px rgb(255 255 255 / 0.75);
-  --clay-dialog:
-    24px 28px 60px rgb(40 42 80 / 0.35),
-    inset -6px -6px 12px rgb(92 96 140 / 0.14),
-    inset 6px 6px 12px rgb(255 255 255 / 0.9);
-}
-
-/* Dark: deep indigo base, low-alpha highlights. Tuned separately, not inverted. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --color-canvas: #1e1f2e;
-    --color-surface: #292a3d;
-    --color-surface-2: #222333;
-    --color-ink: #ecebf7;
-    --color-ink-muted: #b0aecb;
-    --color-accent: #7f95f2;
-    --color-accent-ink: #0c1238;
-    --color-accent-strong: #a9b9ff;
-    --color-mint: #2a6a54;
-    --color-mint-ink: #d4fbeb;
-    --color-peach: #74382a;
-    --color-peach-ink: #ffe0d6;
-    --color-lemon: #62501a;
-    --color-lemon-ink: #fff1c4;
-    --color-lilac: #433a7c;
-    --color-lilac-ink: #e7e1ff;
-
-    --clay:
-      10px 10px 24px rgb(0 0 0 / 0.45),
-      inset -5px -5px 10px rgb(0 0 0 / 0.3),
-      inset 5px 5px 10px rgb(255 255 255 / 0.06);
-    --clay-sm:
-      6px 6px 14px rgb(0 0 0 / 0.4),
-      inset -3px -3px 6px rgb(0 0 0 / 0.3),
-      inset 3px 3px 6px rgb(255 255 255 / 0.07);
-    --clay-lift:
-      16px 18px 34px rgb(0 0 0 / 0.5),
-      inset -5px -5px 10px rgb(0 0 0 / 0.3),
-      inset 5px 5px 10px rgb(255 255 255 / 0.07);
-    --clay-pressed:
-      inset 5px 5px 10px rgb(0 0 0 / 0.45),
-      inset -5px -5px 10px rgb(255 255 255 / 0.05);
-    --clay-dialog:
-      24px 28px 60px rgb(0 0 0 / 0.6),
-      inset -6px -6px 12px rgb(0 0 0 / 0.3),
-      inset 6px 6px 12px rgb(255 255 255 / 0.06);
-  }
+  color-scheme: dark;
 }
 
 @layer base {
@@ -104,113 +56,111 @@
     font-family: var(--font-sans);
   }
   :where(a, button, input, select, textarea, summary, [tabindex]):focus-visible {
-    outline: 2px solid var(--color-accent-strong);
-    outline-offset: 3px;
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
   }
   ::selection {
-    background: var(--color-accent);
-    color: var(--color-accent-ink);
+    background: var(--color-line-strong);
+    color: var(--color-ink);
   }
 }
 
 @layer components {
-  .clay {
+  .panel {
     background: var(--color-surface);
-    border-radius: var(--radius-clay);
-    box-shadow: var(--clay);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
   }
-  .clay-sm {
-    border-radius: var(--radius-control);
-    box-shadow: var(--clay-sm);
-  }
-  .clay-well {
+  .well {
     background: var(--color-surface-2);
-    border-radius: 16px;
-    box-shadow: var(--clay-pressed);
+    border-radius: var(--radius-control);
   }
-  .clay-dialog {
+  .dialog-panel {
     background: var(--color-surface);
-    border-radius: var(--radius-dialog);
-    box-shadow: var(--clay-dialog);
+    border: 1px solid var(--color-line);
+    border-radius: 12px;
+    box-shadow: 0 24px 60px rgb(0 0 0 / 0.4);
   }
-  .clay-lift {
+  /* Interactive panels: brighter border on hover, no movement. */
+  .hoverable {
     transition:
-      transform 150ms ease,
-      box-shadow 150ms ease;
+      border-color 120ms ease,
+      background-color 120ms ease;
   }
-  .clay-lift:hover {
-    transform: scale(1.02);
-    box-shadow: var(--clay-lift);
+  .hoverable:hover {
+    border-color: var(--color-line-strong);
+    background-color: color-mix(in srgb, var(--color-surface) 70%, var(--color-surface-2));
   }
 
-  .clay-btn {
+  .btn {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    border: 1px solid transparent;
     border-radius: var(--radius-control);
-    font-weight: 700;
+    font-weight: 600;
     line-height: 1.1;
-    box-shadow: var(--clay-sm);
     transition:
-      transform 150ms ease,
-      box-shadow 150ms ease,
-      opacity 150ms ease;
+      background-color 120ms ease,
+      border-color 120ms ease,
+      opacity 120ms ease;
     cursor: pointer;
     user-select: none;
     white-space: nowrap;
   }
-  .clay-btn:hover:not(:disabled) {
-    transform: translateY(-1px);
-  }
-  .clay-btn:active:not(:disabled) {
-    transform: translateY(1px);
-    box-shadow: var(--clay-pressed);
-  }
-  .clay-btn:disabled {
-    opacity: 0.55;
+  .btn:disabled {
+    opacity: 0.5;
     cursor: not-allowed;
   }
 
-  .clay-input {
+  .field {
     width: 100%;
-    background: var(--color-surface-2);
-    border-radius: 16px;
-    box-shadow: var(--clay-pressed);
-    padding: 0.7rem 1rem;
+    background: var(--color-canvas);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    padding: 0.55rem 0.8rem;
     color: var(--color-ink);
-    border: 0;
+    transition: border-color 120ms ease;
   }
-  .clay-input::placeholder {
+  .field:hover {
+    border-color: var(--color-line-strong);
+  }
+  .field:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 25%, transparent);
+  }
+  .field::placeholder {
     color: var(--color-ink-muted);
-    opacity: 0.8;
+    opacity: 0.7;
+  }
+
+  /* Underline tab (header nav, watch tabs); active via aria-current / aria-selected. */
+  .tab {
+    display: flex;
+    align-items: center;
+    border-bottom: 2px solid transparent;
+    padding-inline: 0.75rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--color-ink-muted);
+    transition:
+      color 120ms ease,
+      border-color 120ms ease;
+  }
+  .tab:hover {
+    color: var(--color-ink);
+  }
+  .tab[aria-current="page"],
+  .tab[aria-selected="true"] {
+    border-color: var(--color-accent);
+    color: var(--color-ink);
   }
 
   .tabular {
     font-variant-numeric: tabular-nums;
   }
-}
-
-@keyframes clay-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.08);
-  }
-}
-.animate-clay-pulse {
-  animation: clay-pulse 1.6s ease-in-out infinite;
-}
-
-@keyframes clay-spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-.animate-clay-spin {
-  animation: clay-spin 0.9s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -219,10 +169,5 @@
   *::after {
     animation: none !important;
     transition: none !important;
-  }
-  .clay-lift:hover,
-  .clay-btn:hover:not(:disabled),
-  .clay-btn:active:not(:disabled) {
-    transform: none;
   }
 }

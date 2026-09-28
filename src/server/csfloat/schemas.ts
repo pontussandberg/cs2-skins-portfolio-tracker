@@ -9,6 +9,12 @@ const ApiListingSchema = z.object({
   type: z.string(),
   price: z.number(),
   state: z.string().optional(),
+  reference: z
+    .object({
+      base_price: z.number().nullish(),
+      sticker_overpay: z.object({ total_price: z.number().nullish() }).nullish(),
+    })
+    .nullish(),
   item: z.object({
     asset_id: z.coerce.string().nullish(),
     market_hash_name: z.string(),
@@ -27,6 +33,7 @@ const ApiListingSchema = z.object({
           icon_url: z.string().nullish(),
           slot: z.number().nullish(),
           wear: z.number().nullish(),
+          reference: z.object({ price: z.number().nullish() }).nullish(),
         }),
       )
       .nullish(),

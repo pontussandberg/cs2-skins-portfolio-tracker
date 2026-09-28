@@ -2,7 +2,7 @@
 
 Saved CSFloat searches that tell you what's new. Each **watch** is a CSFloat search (item, float range, price, StatTrak, …) plus an optional list of **pattern seeds**. Watches run on a cron schedule or when you press **Run**; every run is diffed against the previous one, and only listings that appeared since then are flagged in the feed and posted to Discord.
 
-Stack: Next.js (App Router) · GraphQL (Apollo Server + Apollo Client, GraphQL Code Generator) · p-queue + croner · JSON file store · Tailwind claymorphism UI.
+Stack: Next.js (App Router) · GraphQL (Apollo Server + Apollo Client, GraphQL Code Generator) · p-queue + croner · JSON file store · Tailwind UI in the Nord palette.
 
 ## Quick start (Windows / macOS / Linux)
 
@@ -55,7 +55,7 @@ src/core/                 pure logic: types, diff, pagination, query hashing, UR
 src/server/               CSFloat client + rate gate, FileStore, queue, scheduler, worker, Discord
 src/graphql/              resolvers, Apollo Server, operations used by the UI
 src/app/                  pages + /api/graphql + /api/events (SSE)
-src/components/           clay UI primitives and views
+src/components/           UI primitives and views
 scripts/                  spike + CLI runner
 deploy/                   systemd unit + packaging script
 ```

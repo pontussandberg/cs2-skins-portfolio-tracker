@@ -36,7 +36,7 @@ export function SystemBanner({ system }: { system: SystemView | null | undefined
   return (
     <div className="mb-6 flex flex-col gap-3">
       {notes.map((n) => (
-        <div key={n.key} role="status" className="clay flex flex-wrap items-center justify-between gap-3 bg-lemon px-5 py-4 text-sm font-semibold text-lemon-ink">
+        <div key={n.key} role="status" className="flex flex-wrap items-center justify-between gap-3 rounded-card border border-warning-ink/30 bg-warning px-4 py-3 text-sm text-warning-ink">
           <span>{n.text}</span>
           {n.action}
         </div>

@@ -9,7 +9,7 @@ export interface ParsedSearch {
 
 const INT_KEYS = ["def_index", "paint_index", "category", "min_price", "max_price", "rarity"] as const;
 const FLOAT_KEYS = ["min_float", "max_float"] as const;
-const STRING_KEYS = ["market_hash_name", "stickers", "collection"] as const;
+const STRING_KEYS = ["market_hash_name", "stickers", "collection", "filter"] as const;
 const SKIP_KEYS = new Set(["limit", "cursor", "page"]);
 
 /**

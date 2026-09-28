@@ -11,6 +11,7 @@ const apiListing = {
   type: "buy_now",
   price: 123456,
   state: "listed",
+  reference: { base_price: 100000, predicted_price: 101000, sticker_overpay: { total_price: 2500, lower_sigma: 0.1 } },
   item: {
     asset_id: "40000000000",
     market_hash_name: "AK-47 | Case Hardened (Field-Tested)",
@@ -21,7 +22,7 @@ const apiListing = {
     inspect_link: "steam://rungame/730/...",
     is_stattrak: false,
     stickers: [
-      { stickerId: 2, name: "Sticker | Bar", icon_url: "https://img/bar", slot: 3, wear: 0.5 },
+      { stickerId: 2, name: "Sticker | Bar", icon_url: "https://img/bar", slot: 3, wear: 0.5, reference: { price: 2500, quantity: 3 } },
       { stickerId: 1, name: "Sticker | Foo", icon_url: "https://img/foo", slot: 0 },
     ],
     extra_field_we_ignore: true,
@@ -67,10 +68,10 @@ describe("CsfloatClient", () => {
     expect(calls[0]).toContain("paint_seed=661");
     expect(calls[0]).toContain("cursor=n1");
     expect(page.cursor).toBe("n2");
-    expect(page.items[0]).toMatchObject({ id: "324288155723370196", price: 123456, seed: 661, stickers: ["Sticker | Bar", "Sticker | Foo"], lowRank: 32, highRank: null });
+    expect(page.items[0]).toMatchObject({ id: "324288155723370196", price: 123456, seed: 661, stickers: ["Sticker | Bar", "Sticker | Foo"], lowRank: 32, highRank: null, basePrice: 100000, stickerValue: 2500 });
     expect(page.items[0]!.stickerDetails).toEqual([
-      { name: "Sticker | Foo", iconUrl: "https://img/foo", slot: 0, wear: null },
-      { name: "Sticker | Bar", iconUrl: "https://img/bar", slot: 3, wear: 0.5 },
+      { name: "Sticker | Foo", iconUrl: "https://img/foo", slot: 0, wear: null, price: null },
+      { name: "Sticker | Bar", iconUrl: "https://img/bar", slot: 3, wear: 0.5, price: 2500 },
     ]);
   });
 

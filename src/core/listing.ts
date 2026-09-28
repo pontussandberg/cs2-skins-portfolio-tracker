@@ -7,6 +7,7 @@ export interface ApiListing {
   type: string;
   price: number;
   state?: string;
+  reference?: { base_price?: number | null; sticker_overpay?: { total_price?: number | null } | null } | null;
   item: {
     asset_id?: string | null;
     market_hash_name: string;
@@ -17,7 +18,16 @@ export interface ApiListing {
     icon_url?: string | null;
     inspect_link?: string | null;
     is_stattrak?: boolean | null;
-    stickers?: { stickerId?: number | null; name?: string | null; icon_url?: string | null; slot?: number | null; wear?: number | null }[] | null;
+    stickers?:
+      | {
+          stickerId?: number | null;
+          name?: string | null;
+          icon_url?: string | null;
+          slot?: number | null;
+          wear?: number | null;
+          reference?: { price?: number | null } | null;
+        }[]
+      | null;
   };
 }
 
@@ -38,8 +48,10 @@ export function toSnap(l: ApiListing): ListingSnap {
     stickers: (l.item.stickers ?? []).map((s) => s.name ?? "").filter(Boolean),
     stickerDetails: (l.item.stickers ?? [])
       .filter((s) => s.name)
-      .map((s) => ({ name: s.name!, iconUrl: s.icon_url ?? null, slot: s.slot ?? null, wear: s.wear ?? null }))
+      .map((s) => ({ name: s.name!, iconUrl: s.icon_url ?? null, slot: s.slot ?? null, wear: s.wear ?? null, price: s.reference?.price ?? null }))
       .sort((a, b) => (a.slot ?? 99) - (b.slot ?? 99)),
+    basePrice: l.reference?.base_price ?? null,
+    stickerValue: l.reference?.sticker_overpay?.total_price ?? null,
     stattrak: Boolean(l.item.is_stattrak),
   };
 }
@@ -70,6 +82,19 @@ const COMPARE: Partial<Record<SortBy, Compare>> = {
 export function sortListings(items: ListingSnap[], sort: SortBy): ListingSnap[] {
   const compare = COMPARE[sort];
   return compare ? [...items].sort(compare) : [...items];
+}
+
+/**
+ * CSFloat's sticker percentage ("SP"): what share of the stickers' reference value the price asks
+ * on top of the item's own reference price. 20 = paying 20% of the sticker value extra.
+ * Null without a base price or priced stickers (e.g. snapshots saved before prices were tracked).
+ */
+export function stickerPercent(l: Pick<ListingSnap, "price" | "basePrice" | "stickerValue" | "stickerDetails">): number | null {
+  if (l.basePrice == null) return null;
+  // CSFloat's own sticker total when it sent one, else the sum of the stickers' reference prices.
+  const stickerValue = l.stickerValue ?? (l.stickerDetails ?? []).reduce((sum, s) => sum + (s.price ?? 0), 0);
+  if (stickerValue <= 0) return null;
+  return ((l.price - l.basePrice) / stickerValue) * 100;
 }
 
 /** Sticker details for display; older snapshots only have names. */

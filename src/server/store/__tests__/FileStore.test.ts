@@ -1,4 +1,4 @@
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
@@ -59,7 +59,7 @@ describe("FileStore", () => {
 
     const b = new FileStore(dir);
     await b.init();
-    expect(await b.getWatch("w1")).toEqual(watch);
+    expect(await b.getWatch("w1")).toEqual({ ...watch, position: 0 });
     expect((await b.getQueryState("abc"))?.seen).toEqual({ x: "t" });
     expect((await b.listRuns("w1")).map((r) => [r.id, r.status])).toEqual([
       ["r2", "done"],
@@ -78,5 +78,24 @@ describe("FileStore", () => {
     await fresh.init();
     expect(await fresh.listWatches()).toEqual([]);
     expect(await fresh.listRuns("w1")).toEqual([]);
+  });
+
+  it("orders legacy watches by name, appends new ones, and persists a reorder", async () => {
+    // watches.json from before ordering existed: no positions.
+    await writeFile(path.join(dir, "watches.json"), JSON.stringify([{ ...watch, id: "a", name: "Charlie" }, { ...watch, id: "b", name: "Alpha" }]));
+    const s = new FileStore(dir);
+    await s.init();
+    await s.saveWatch({ ...watch, id: "c", name: "Aardvark" }); // new: last, despite its name
+    expect((await s.listWatches()).map((w) => w.id)).toEqual(["b", "a", "c"]);
+
+    // Only "c" listed: it goes first, the rest keep their order after it.
+    await s.reorderWatches(["c"]);
+    const fresh = new FileStore(dir);
+    await fresh.init();
+    expect((await fresh.listWatches()).map((w) => [w.id, w.position])).toEqual([
+      ["c", 0],
+      ["b", 1],
+      ["a", 2],
+    ]);
   });
 });

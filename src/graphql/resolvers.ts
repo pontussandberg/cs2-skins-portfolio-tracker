@@ -2,7 +2,7 @@ import { GraphQLError } from "graphql";
 import { buildCsfloatSearchUrl } from "@/core/csfloatUrl";
 import { buildFeed, countUnread, dedupeById } from "@/core/diff";
 import { baseItemName, iconUrl, listingUrl } from "@/core/format";
-import { sortListings, stickersOf } from "@/core/listing";
+import { sortListings, stickerPercent, stickersOf } from "@/core/listing";
 import { buildSubQueries } from "@/core/queryHash";
 import { sortOf, type ListingSnap, type RunRecord, type Watch } from "@/core/types";
 import type { WatchInputError } from "@/server/watchInput";
@@ -55,6 +55,7 @@ export const resolvers: Resolvers = {
     createWatch: (_p, { input }, { rt }) => rt.createWatch(input).catch(userError),
     updateWatch: (_p, { id, input }, { rt }) => rt.updateWatch(id, input).catch(userError),
     deleteWatch: (_p, { id }, { rt }) => rt.deleteWatch(id),
+    reorderWatches: (_p, { ids }, { rt }) => rt.reorderWatches(ids).catch(userError),
     runWatch: async (_p, { id }, { rt }) => {
       await requireWatch(rt, id);
       return rt.queue.enqueue(id, "manual");
@@ -109,6 +110,7 @@ export const resolvers: Resolvers = {
     csfloatUrl: (l) => listingUrl(l.id),
     iconUrl: (l) => iconUrl(l.iconUrl),
     stickerDetails: (l) => stickersOf(l),
+    stickerPercent: (l) => stickerPercent(l),
   },
 
   FeedItem: {

@@ -39,6 +39,8 @@ export interface CsfloatQuery {
   stickers?: string | null;
   collection?: string | null;
   rarity?: number | null;
+  /** CSFloat search preset, e.g. "sticker_combos" (4+ of the same sticker). Passed through as-is. */
+  filter?: string | null;
   /**
    * Result order. With most_recent the watch follows the newest listings; with any other sort it
    * tracks the top `maxPages` pages in that order (e.g. the 50 lowest floats).
@@ -59,6 +61,7 @@ export const CSFLOAT_QUERY_KEYS = [
   "stickers",
   "collection",
   "rarity",
+  "filter",
   "sort_by",
 ] as const satisfies readonly (keyof CsfloatQuery)[];
 
@@ -80,6 +83,8 @@ export interface Watch {
   updatedAt: string;
   /** Bumped when you open the watch in the UI; drives the unread badge. */
   lastSeenAt: string | null;
+  /** Custom order on the dashboard (ascending). Assigned by the store; omit it when creating a watch. */
+  position?: number;
 }
 
 export interface StickerSnap {
@@ -90,6 +95,8 @@ export interface StickerSnap {
   slot: number | null;
   /** Scrape, 0 = pristine. Only present when CSFloat reports it. */
   wear: number | null;
+  /** CSFloat reference price in USD cents. Missing on snapshots saved before this was tracked. */
+  price?: number | null;
 }
 
 /** Compact listing: only what the diff, UI and Discord need. */
@@ -112,6 +119,10 @@ export interface ListingSnap {
   stickers: string[];
   /** Stickers with images, in slot order. Missing on snapshots saved before this was tracked. */
   stickerDetails?: StickerSnap[];
+  /** CSFloat reference price of the item itself (no stickers), USD cents. */
+  basePrice?: number | null;
+  /** CSFloat's total reference value of the stickers, USD cents (used for the sticker percentage). */
+  stickerValue?: number | null;
   stattrak: boolean;
 }
 

@@ -13,6 +13,8 @@ type Mutation {
   createWatch(input: WatchInput!): Watch!
   updateWatch(id: ID!, input: WatchInput!): Watch!
   deleteWatch(id: ID!): Boolean!
+  "Save the dashboard order. Watches not listed keep their order after the listed ones."
+  reorderWatches(ids: [ID!]!): [Watch!]!
   "Queue a run now. Returns the already-queued run if one exists."
   runWatch(id: ID!): Run!
   runAll: [Run!]!
@@ -56,6 +58,8 @@ type CsfloatQuery {
   stickers: String
   collection: String
   rarity: Int
+  "CSFloat search preset, e.g. sticker_combos."
+  filter: String
   "Null = most_recent."
   sort_by: SortBy
 }
@@ -73,6 +77,8 @@ input CsfloatQueryInput {
   stickers: String
   collection: String
   rarity: Int
+  "CSFloat search preset, e.g. sticker_combos."
+  filter: String
   "Null = most_recent."
   sort_by: SortBy
 }
@@ -168,6 +174,8 @@ type Listing {
   stickers: [String!]!
   "Stickers with images, in slot order. Older snapshots have names only (iconUrl null)."
   stickerDetails: [Sticker!]!
+  "CSFloat sticker percentage (SP): share of the stickers' value asked on top of the item's reference price. Null when unknown."
+  stickerPercent: Float
   createdAt: DateTime!
   csfloatUrl: String!
   inspectLink: String
@@ -181,6 +189,8 @@ type Sticker {
   slot: Int
   "Scrape, 0 = pristine. Null when unknown."
   wear: Float
+  "CSFloat reference price, USD cents. Null when unknown."
+  price: Int
 }
 
 type FeedItem {

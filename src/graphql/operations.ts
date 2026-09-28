@@ -12,6 +12,8 @@ import type {
   MarkAllSeenMutationVariables,
   MarkWatchSeenMutation,
   MarkWatchSeenMutationVariables,
+  ReorderWatchesMutation,
+  ReorderWatchesMutationVariables,
   ResumeSchedulerMutation,
   ResumeSchedulerMutationVariables,
   RunAllMutation,
@@ -45,7 +47,9 @@ export const LISTING_FIELDS = gql`
       iconUrl
       slot
       wear
+      price
     }
+    stickerPercent
     createdAt
     csfloatUrl
     inspectLink
@@ -102,6 +106,7 @@ export const QUERY_FIELDS = gql`
     stickers
     collection
     rarity
+    filter
     sort_by
   }
 `;
@@ -210,6 +215,14 @@ export const UPDATE_WATCH: TypedDocumentNode<UpdateWatchMutation, UpdateWatchMut
 export const DELETE_WATCH: TypedDocumentNode<DeleteWatchMutation, DeleteWatchMutationVariables> = gql`
   mutation DeleteWatch($id: ID!) {
     deleteWatch(id: $id)
+  }
+`;
+
+export const REORDER_WATCHES: TypedDocumentNode<ReorderWatchesMutation, ReorderWatchesMutationVariables> = gql`
+  mutation ReorderWatches($ids: [ID!]!) {
+    reorderWatches(ids: $ids) {
+      id
+    }
   }
 `;
 

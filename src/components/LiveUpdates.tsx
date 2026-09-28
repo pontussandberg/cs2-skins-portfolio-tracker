@@ -14,7 +14,7 @@ type ServerEvent =
 
 interface Toast {
   id: number;
-  tone: "mint" | "peach";
+  tone: "success" | "danger";
   title: string;
   body?: string;
   href?: string;
@@ -53,13 +53,13 @@ export function LiveUpdates() {
       }
       refetchSoon();
       if (event.type === "run.finished" && !event.baseline && event.added > 0) {
-        push({ tone: "mint", title: `${event.added} new · ${event.watchName}`, href: `/watches/${event.watchId}` });
+        push({ tone: "success", title: `${event.added} new · ${event.watchName}`, href: `/watches/${event.watchId}` });
       } else if (event.type === "run.finished" && event.baseline) {
-        push({ tone: "mint", title: `Baseline saved · ${event.watchName}`, body: "Future runs will flag anything new." });
+        push({ tone: "success", title: `Baseline saved · ${event.watchName}`, body: "Future runs will flag anything new." });
       } else if (event.type === "run.failed") {
-        push({ tone: "peach", title: "Run failed", body: event.error, href: `/watches/${event.watchId}` });
+        push({ tone: "danger", title: "Run failed", body: event.error, href: `/watches/${event.watchId}` });
       } else if (event.type === "scheduler.suspended") {
-        push({ tone: "peach", title: "Scheduler paused", body: event.reason });
+        push({ tone: "danger", title: "Scheduler paused", body: event.reason });
       }
     };
     return () => {
@@ -72,18 +72,18 @@ export function LiveUpdates() {
     <>
       {!connected ? (
         <div className="fixed bottom-4 left-4 z-40">
-          <span className="clay-sm inline-flex rounded-full bg-lemon px-3 py-1.5 text-xs font-bold text-lemon-ink">Live updates reconnecting…</span>
+          <span className="inline-flex rounded-md border border-warning-ink/30 bg-warning px-2.5 py-1 text-xs font-medium text-warning-ink">Live updates reconnecting…</span>
         </div>
       ) : null}
-      <div aria-live="polite" className="fixed bottom-4 right-4 z-50 flex w-[min(92vw,360px)] flex-col gap-3">
+      <div aria-live="polite" className="fixed bottom-4 right-4 z-50 flex w-[min(92vw,360px)] flex-col gap-2">
         {toasts.map((t) => {
           const inner = (
             <>
-              <p className="font-extrabold">{t.title}</p>
+              <p className="text-sm font-semibold">{t.title}</p>
               {t.body ? <p className="mt-0.5 line-clamp-3 text-sm opacity-90">{t.body}</p> : null}
             </>
           );
-          const cls = clsx("clay-dialog block px-5 py-4", t.tone === "mint" ? "bg-mint text-mint-ink" : "bg-peach text-peach-ink");
+          const cls = clsx("dialog-panel block border-l-4 px-4 py-3", t.tone === "success" ? "border-l-success-ink" : "border-l-danger-ink");
           return t.href ? (
             <Link key={t.id} href={t.href} className={cls}>
               {inner}

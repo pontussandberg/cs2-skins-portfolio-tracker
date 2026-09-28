@@ -1,4 +1,5 @@
-import { formatFloat, formatFloatRank, formatPrice, iconUrl, listingUrl } from "@/core/format";
+import { formatFloat, formatFloatRank, formatPrice, formatStickerPercent, iconUrl, listingUrl } from "@/core/format";
+import { stickerPercent } from "@/core/listing";
 import type { ListingSnap } from "@/core/types";
 
 /** Discord allows at most 10 embeds per webhook message. */
@@ -40,7 +41,10 @@ export function listingEmbed(l: ListingSnap): DiscordEmbed {
     `float ${formatFloat(l.float)}${rank ? ` (${rank})` : ""}`,
     l.type === "auction" ? "auction" : "buy now",
   ];
-  if (l.stickers.length) details.push(`stickers: ${l.stickers.slice(0, 4).join(", ")}`);
+  if (l.stickers.length) {
+    const sp = stickerPercent(l);
+    details.push(`stickers: ${l.stickers.slice(0, 4).join(", ")}${sp != null ? ` (${formatStickerPercent(sp)})` : ""}`);
+  }
   const thumb = iconUrl(l.iconUrl, 128);
   return {
     title: truncate(titleParts.join(" · "), 256),
