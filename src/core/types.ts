@@ -3,6 +3,27 @@
 
 export type ListingType = "buy_now" | "auction";
 
+/** CSFloat `sort_by` values we pass through. most_recent is the default. */
+export const CSFLOAT_SORTS = [
+  "most_recent",
+  "lowest_price",
+  "highest_price",
+  "lowest_float",
+  "highest_float",
+  "best_deal",
+  "highest_discount",
+] as const;
+export type SortBy = (typeof CSFLOAT_SORTS)[number];
+export const DEFAULT_SORT: SortBy = "most_recent";
+
+export function isSortBy(value: unknown): value is SortBy {
+  return (CSFLOAT_SORTS as readonly unknown[]).includes(value);
+}
+
+export function sortOf(query: Pick<CsfloatQuery, "sort_by">): SortBy {
+  return query.sort_by ?? DEFAULT_SORT;
+}
+
 /** Validated subset of CSFloat GET /api/v1/listings params. Prices in USD cents. */
 export interface CsfloatQuery {
   def_index?: number | null;
@@ -18,6 +39,11 @@ export interface CsfloatQuery {
   stickers?: string | null;
   collection?: string | null;
   rarity?: number | null;
+  /**
+   * Result order. With most_recent the watch follows the newest listings; with any other sort it
+   * tracks the top `maxPages` pages in that order (e.g. the 50 lowest floats).
+   */
+  sort_by?: SortBy | null;
 }
 
 export const CSFLOAT_QUERY_KEYS = [
@@ -33,6 +59,7 @@ export const CSFLOAT_QUERY_KEYS = [
   "stickers",
   "collection",
   "rarity",
+  "sort_by",
 ] as const satisfies readonly (keyof CsfloatQuery)[];
 
 /** A saved search. */
@@ -55,6 +82,16 @@ export interface Watch {
   lastSeenAt: string | null;
 }
 
+export interface StickerSnap {
+  name: string;
+  /** Full image URL. */
+  iconUrl: string | null;
+  /** 0-based position on the weapon. */
+  slot: number | null;
+  /** Scrape, 0 = pristine. Only present when CSFloat reports it. */
+  wear: number | null;
+}
+
 /** Compact listing: only what the diff, UI and Discord need. */
 export interface ListingSnap {
   id: string;
@@ -66,10 +103,15 @@ export interface ListingSnap {
   name: string;
   seed: number | null;
   float: number | null;
+  /** CSFloat float rank among all known items of this skin (1 = lowest / highest). Only set when ranked. */
+  lowRank?: number | null;
+  highRank?: number | null;
   inspectLink: string | null;
   /** Raw Steam economy icon hash or URL as returned by CSFloat. */
   iconUrl: string | null;
   stickers: string[];
+  /** Stickers with images, in slot order. Missing on snapshots saved before this was tracked. */
+  stickerDetails?: StickerSnap[];
   stattrak: boolean;
 }
 

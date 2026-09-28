@@ -3,9 +3,10 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import Link from "next/link";
 import { useState } from "react";
-import { describeSchedule, timeAgo } from "@/core/format";
+import { describeQuery, describeSchedule, timeAgo } from "@/core/format";
 import type { WatchesQuery } from "@/graphql/__generated__/graphql";
 import { RUN_ALL, RUN_WATCH, SEND_TEST_NOTIFICATION, WATCHES } from "@/graphql/operations";
+import { DeleteWatchButton } from "./DeleteWatchButton";
 import { RunStatusBadge, RunSummaryLine } from "./RunStatus";
 import { SystemBanner } from "./SystemBanner";
 import { Badge, Button, Card, EmptyState, ErrorNote, LinkButton, Skeleton } from "./ui";
@@ -85,14 +86,18 @@ function WatchCard({ watch }: { watch: WatchItem }) {
   const [runWatch, { loading, error }] = useMutation(RUN_WATCH, { refetchQueries: "active" });
   const running = watch.isRunning || loading;
   const shownSeeds = watch.seeds.slice(0, 8);
+  const filters = describeQuery(watch.query);
+  const showItem = watch.itemName && !watch.name.includes(watch.itemName);
 
+  // The whole card opens the watch: the title link is stretched over it, buttons sit above it.
   return (
-    <Card as="li" lift className="flex flex-col gap-4">
+    <Card as="li" lift className="relative flex flex-col gap-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <Link href={`/watches/${watch.id}`} className="block truncate text-lg font-extrabold hover:underline">
+          <Link href={`/watches/${watch.id}`} className="block truncate text-lg font-extrabold after:absolute after:inset-0 after:content-[''] hover:underline">
             {watch.name}
           </Link>
+          {showItem ? <p className="truncate text-sm font-bold">{watch.itemName}</p> : null}
           <p className="text-sm text-ink-muted">
             {describeSchedule(watch.schedule)}
             {watch.nextRunAt ? ` · next ${timeAgo(watch.nextRunAt)}` : ""}
@@ -109,6 +114,14 @@ function WatchCard({ watch }: { watch: WatchItem }) {
           <RunStatusBadge run={watch.lastRun} running={watch.isRunning} />
         </div>
       </div>
+
+      {filters.length ? (
+        <div className="flex flex-wrap gap-1.5">
+          {filters.map((f) => (
+            <Badge key={f}>{f}</Badge>
+          ))}
+        </div>
+      ) : null}
 
       {shownSeeds.length ? (
         <div className="flex flex-wrap gap-1.5">
@@ -130,12 +143,13 @@ function WatchCard({ watch }: { watch: WatchItem }) {
       <ErrorNote error={error} />
 
       <div className="mt-auto flex gap-3">
-        <Button tone="primary" size="sm" busy={running} onClick={() => runWatch({ variables: { id: watch.id } }).catch(ignore)}>
+        <Button tone="primary" size="sm" className="relative z-10" busy={running} onClick={() => runWatch({ variables: { id: watch.id } }).catch(ignore)}>
           {running ? "Running" : "Run now"}
         </Button>
-        <LinkButton href={`/watches/${watch.id}`} size="sm">
+        <LinkButton href={`/watches/${watch.id}`} size="sm" className="relative z-10">
           Open
         </LinkButton>
+        <DeleteWatchButton watch={watch} size="sm" className="relative z-10 ml-auto" />
       </div>
     </Card>
   );

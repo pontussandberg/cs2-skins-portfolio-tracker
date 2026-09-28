@@ -36,8 +36,16 @@ export const LISTING_FIELDS = gql`
     type
     seed
     float
+    lowRank
+    highRank
     stattrak
     stickers
+    stickerDetails {
+      name
+      iconUrl
+      slot
+      wear
+    }
     createdAt
     csfloatUrl
     inspectLink
@@ -94,6 +102,7 @@ export const QUERY_FIELDS = gql`
     stickers
     collection
     rarity
+    sort_by
   }
 `;
 
@@ -109,6 +118,7 @@ export const WATCH_SUMMARY = gql`
     isRunning
     nextRunAt
     lastSeenAt
+    itemName
     query {
       ...QueryFields
     }

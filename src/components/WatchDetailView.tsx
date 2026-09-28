@@ -4,11 +4,12 @@ import { useMutation, useQuery } from "@apollo/client/react";
 import clsx from "clsx";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { describeSchedule, formatFloat, formatPrice, timeAgo } from "@/core/format";
-import { DELETE_WATCH, MARK_WATCH_SEEN, RUN_WATCH, WATCH_DETAIL } from "@/graphql/operations";
-import { CopyInspect } from "./ListingCard";
+import { describeSchedule, sortLabel, timeAgo } from "@/core/format";
+import { MARK_WATCH_SEEN, RUN_WATCH, WATCH_DETAIL } from "@/graphql/operations";
+import { DeleteWatchButton } from "./DeleteWatchButton";
+import { ListingCard } from "./ListingCard";
 import { RunStatusBadge, RunSummaryLine } from "./RunStatus";
-import { Badge, Button, Card, ConfirmDialog, EmptyState, ErrorNote, IconPlate, LinkButton, Skeleton } from "./ui";
+import { Badge, Button, Card, EmptyState, ErrorNote, LinkButton, Skeleton } from "./ui";
 import { WatchForm } from "./WatchForm";
 import { ignore } from "@/lib/ignore";
 
@@ -19,9 +20,7 @@ export function WatchDetailView({ id }: { id: string }) {
   const { data, loading, error } = useQuery(WATCH_DETAIL, { variables: { id }, fetchPolicy: "cache-and-network" });
   const [runWatch, runState] = useMutation(RUN_WATCH, { refetchQueries: "active" });
   const [markSeen] = useMutation(MARK_WATCH_SEEN);
-  const [deleteWatch, deleteState] = useMutation(DELETE_WATCH);
   const [tab, setTab] = useState<Tab>("listings");
-  const [confirmDelete, setConfirmDelete] = useState(false);
   const markedFor = useRef<string | null>(null);
 
   const watch = data?.watch;
@@ -50,6 +49,7 @@ export function WatchDetailView({ id }: { id: string }) {
   }
 
   const running = watch.isRunning || runState.loading;
+  const sort = sortLabel(watch.query.sort_by);
 
   return (
     <div className="flex flex-col gap-6">
@@ -60,7 +60,8 @@ export function WatchDetailView({ id }: { id: string }) {
             <p className="mt-1 text-sm text-ink-muted">
               {describeSchedule(watch.schedule)}
               {watch.nextRunAt ? ` · next run ${timeAgo(watch.nextRunAt)}` : ""}
-              {!watch.enabled ? " · disabled" : ""} · Discord {watch.notify ? "on" : "off"} · up to {watch.maxPages} page{watch.maxPages === 1 ? "" : "s"} per seed
+              {!watch.enabled ? " · disabled" : ""}
+              {sort ? ` · sorted by ${sort.toLowerCase()}` : ""} · Discord {watch.notify ? "on" : "off"} · up to {watch.maxPages} page{watch.maxPages === 1 ? "" : "s"} per seed
             </p>
           </div>
           <div className="flex flex-wrap gap-3">
@@ -114,55 +115,13 @@ export function WatchDetailView({ id }: { id: string }) {
         watch.currentListings.length === 0 ? (
           <EmptyState title="No listings yet" body="Run the watch to fetch the current results. The first run saves a baseline." />
         ) : (
-          <Card className="overflow-x-auto p-3 sm:p-4">
-            <table className="w-full min-w-[720px] border-separate border-spacing-y-1.5 text-sm">
-              <thead>
-                <tr className="text-left text-xs font-bold uppercase tracking-wider text-ink-muted">
-                  <th className="px-3 py-2">Item</th>
-                  <th className="px-3 py-2 text-right">Seed</th>
-                  <th className="px-3 py-2 text-right">Float</th>
-                  <th className="px-3 py-2 text-right">Price</th>
-                  <th className="px-3 py-2">Listed</th>
-                  <th className="px-3 py-2" />
-                </tr>
-              </thead>
-              <tbody>
-                {watch.currentListings.map((l, i) => {
-                  const isNew = newIds.has(l.id);
-                  return (
-                    <tr key={l.id} className={clsx(isNew ? "bg-mint text-mint-ink" : i % 2 ? "bg-surface-2/60" : "")}>
-                      <td className="rounded-l-2xl px-3 py-2">
-                        <div className="flex items-center gap-3">
-                          <IconPlate src={l.iconUrl} alt={l.name} size={44} />
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              {isNew ? <Badge tone="mint">NEW</Badge> : null}
-                              {l.type === "auction" ? <Badge tone="lilac">Auction</Badge> : null}
-                            </div>
-                            <div className="max-w-[320px] truncate font-bold" title={l.name}>
-                              {l.name}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="tabular px-3 py-2 text-right font-bold">{l.seed ?? "-"}</td>
-                      <td className="tabular px-3 py-2 text-right font-mono">{formatFloat(l.float)}</td>
-                      <td className="tabular px-3 py-2 text-right font-black">{formatPrice(l.price)}</td>
-                      <td className="px-3 py-2 text-ink-muted">{timeAgo(l.createdAt)}</td>
-                      <td className="rounded-r-2xl px-3 py-2">
-                        <div className="flex justify-end gap-1">
-                          <CopyInspect link={l.inspectLink} />
-                          <LinkButton href={l.csfloatUrl} external size="sm" tone="primary">
-                            Open
-                          </LinkButton>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </Card>
+          <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {watch.currentListings.map((l) => (
+              <li key={l.id} className="grid">
+                <ListingCard listing={l} kind={newIds.has(l.id) ? "NEW" : null} />
+              </li>
+            ))}
+          </ul>
         )
       ) : null}
 
@@ -226,24 +185,11 @@ export function WatchDetailView({ id }: { id: string }) {
               <h2 className="font-extrabold">Delete this watch</h2>
               <p className="text-sm">Removes the watch and its run history. Seen-sets for its queries stay on disk.</p>
             </div>
-            <Button tone="danger" onClick={() => setConfirmDelete(true)}>
-              Delete
-            </Button>
+            <DeleteWatchButton watch={watch} onDeleted={() => router.push("/watches")} />
           </Card>
         </>
       ) : null}
 
-      <ConfirmDialog
-        open={confirmDelete}
-        title={`Delete "${watch.name}"?`}
-        body="This can't be undone."
-        confirmLabel="Delete watch"
-        busy={deleteState.loading}
-        onCancel={() => setConfirmDelete(false)}
-        onConfirm={() => {
-          deleteWatch({ variables: { id } }).then(() => router.push("/watches"), ignore);
-        }}
-      />
     </div>
   );
 }

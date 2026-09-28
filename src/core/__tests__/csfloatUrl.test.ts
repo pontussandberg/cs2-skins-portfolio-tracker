@@ -6,9 +6,29 @@ describe("parseCsfloatSearchUrl", () => {
     const r = parseCsfloatSearchUrl(
       "https://csfloat.com/search?def_index=7&paint_index=44&paint_seed=661&paint_seed=670,321&max_float=0.38&category=1&type=buy_now&sort_by=lowest_price&foo=bar",
     );
-    expect(r.query).toEqual({ def_index: 7, paint_index: 44, max_float: 0.38, category: 1, type: "buy_now" });
+    expect(r.query).toEqual({ def_index: 7, paint_index: 44, max_float: 0.38, category: 1, type: "buy_now", sort_by: "lowest_price" });
     expect(r.seeds).toEqual([321, 661, 670]);
     expect(r.ignored).toEqual(["foo"]);
+  });
+
+  it("keeps the sort order", () => {
+    const r = parseCsfloatSearchUrl("https://csfloat.com/search?sort_by=lowest_float&def_index=500&paint_index=40");
+    expect(r.query).toEqual({ def_index: 500, paint_index: 40, sort_by: "lowest_float" });
+    expect(r.ignored).toEqual([]);
+  });
+
+  it("reports an unknown sort instead of guessing", () => {
+    const r = parseCsfloatSearchUrl("def_index=7&sort_by=nonsense");
+    expect(r.query).toEqual({ def_index: 7 });
+    expect(r.ignored).toEqual(["sort_by=nonsense"]);
+  });
+
+  it("keeps a sticker-only search", () => {
+    const r = parseCsfloatSearchUrl(
+      "https://csfloat.com/search?sort_by=most_recent&stickers=%5B%7B%22i%22:663%7D,%7B%22i%22:663%7D,%7B%22i%22:663%7D,%7B%22i%22:663%7D%5D",
+    );
+    expect(r.query).toEqual({ stickers: '[{"i":663},{"i":663},{"i":663},{"i":663}]' });
+    expect(r.ignored).toEqual([]);
   });
 
   it("accepts a bare query string", () => {
@@ -22,6 +42,11 @@ describe("parseCsfloatSearchUrl", () => {
     const r = parseCsfloatSearchUrl(url);
     expect(r.query).toEqual({ def_index: 7, paint_index: 44, max_price: 100000 });
     expect(r.seeds).toEqual([661]);
+  });
+
+  it("builds links with the watch's sort, defaulting to most_recent", () => {
+    expect(buildCsfloatSearchUrl({ def_index: 500, sort_by: "lowest_float" })).toContain("sort_by=lowest_float");
+    expect(buildCsfloatSearchUrl({ def_index: 500 })).toContain("sort_by=most_recent");
   });
 });
 

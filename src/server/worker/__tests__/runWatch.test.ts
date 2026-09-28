@@ -4,6 +4,7 @@ import path from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { snap } from "@/core/__tests__/fixtures";
 import type { Page } from "@/core/paginate";
+import { PAGE_LIMIT } from "@/core/queryHash";
 import type { ListingSnap, RunRecord, Watch } from "@/core/types";
 import { CsfloatAuthError } from "../../csfloat/errors";
 import { EventBus, type AppEvent } from "../../events";
@@ -46,10 +47,15 @@ function fakeClient(bySeed: Record<number, ListingSnap[]>, fail?: Error) {
   };
 }
 
-async function setup(client: ReturnType<typeof fakeClient>) {
+type TestClient = {
+  requestCount: number;
+  fetchListingsPage(params: Record<string, string | number>, cursor: string | null): Promise<Page>;
+};
+
+async function setup(client: TestClient, w: Watch = watch) {
   const store = new FileStore(dir);
   await store.init();
-  await store.saveWatch(watch);
+  await store.saveWatch(w);
   const events: AppEvent[] = [];
   const bus = new EventBus();
   bus.subscribe((e) => events.push(e));
@@ -125,5 +131,31 @@ describe("executeRun", () => {
     const after = await executeRun(deps, "r3");
     expect(after).toMatchObject({ status: "done", baseline: false });
     expect(after!.added).toEqual([]);
+  });
+
+  it("fetches the whole window for ranked sorts, so a new listing behind a known page is found", async () => {
+    const ranked: Watch = { ...watch, query: { def_index: 500, paint_index: 40, sort_by: "lowest_float" }, seeds: [], maxPages: 3 };
+    const page = (prefix: string) => Array.from({ length: PAGE_LIMIT }, (_, i) => snap({ id: `${prefix}${i}` }));
+    let pages = [page("p1-"), page("p2-")];
+    const client = {
+      requestCount: 0,
+      async fetchListingsPage(params: Record<string, string | number>, cursor: string | null): Promise<Page> {
+        this.requestCount += 1;
+        expect(params.sort_by).toBe("lowest_float");
+        const i = cursor ? Number(cursor) : 0;
+        return { items: pages[i] ?? [], cursor: i + 1 < pages.length ? String(i + 1) : null };
+      },
+    };
+    const { store, deps } = await setup(client, ranked);
+
+    await queueRun(store, "r1");
+    expect(await executeRun(deps, "r1")).toMatchObject({ status: "done", baseline: true, requests: 2 });
+
+    // Page 1 is unchanged (all known); a new low float appears on page 2.
+    pages = [pages[0]!, [snap({ id: "fresh" }), ...pages[1]!.slice(1)]];
+    await queueRun(store, "r2");
+    const second = await executeRun(deps, "r2");
+    expect(second).toMatchObject({ status: "done", requests: 2 });
+    expect(second!.added.map((l) => l.id)).toEqual(["fresh"]);
   });
 });

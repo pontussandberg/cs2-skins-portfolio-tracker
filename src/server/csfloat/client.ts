@@ -1,4 +1,4 @@
-import { toSnap } from "@/core/listing";
+import { toSnap, type ApiListing } from "@/core/listing";
 import type { Page } from "@/core/paginate";
 import type { Logger } from "../logger";
 import { CsfloatAuthError, CsfloatHttpError } from "./errors";
@@ -40,12 +40,16 @@ export class CsfloatClient {
   }
 
   async fetchListingsPage(params: Record<string, string | number>, cursor: string | null): Promise<Page> {
+    const { listings, cursor: next } = await this.fetchListings(params, cursor);
+    return { items: listings.map(toSnap), cursor: next };
+  }
+
+  /** Validated API listings, before mapping to snapshots (keeps fields like sticker ids). */
+  async fetchListings(params: Record<string, string | number>, cursor: string | null = null): Promise<{ listings: ApiListing[]; cursor: string | null }> {
     const url = new URL(`${CSFLOAT_API}/listings`);
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
     if (cursor) url.searchParams.set("cursor", cursor);
-    const json = await this.request(url);
-    const { listings, cursor: next } = parseListingsResponse(json);
-    return { items: listings.map(toSnap), cursor: next };
+    return parseListingsResponse(await this.request(url));
   }
 
   /** Raw request, also used by the spike script. Returns parsed JSON. */

@@ -1,4 +1,4 @@
-import type { CsfloatQuery, ListingType } from "./types";
+import { DEFAULT_SORT, isSortBy, sortOf, type CsfloatQuery, type ListingType } from "./types";
 
 export interface ParsedSearch {
   query: CsfloatQuery;
@@ -10,7 +10,7 @@ export interface ParsedSearch {
 const INT_KEYS = ["def_index", "paint_index", "category", "min_price", "max_price", "rarity"] as const;
 const FLOAT_KEYS = ["min_float", "max_float"] as const;
 const STRING_KEYS = ["market_hash_name", "stickers", "collection"] as const;
-const SKIP_KEYS = new Set(["sort_by", "limit", "cursor", "page"]);
+const SKIP_KEYS = new Set(["limit", "cursor", "page"]);
 
 /**
  * Parse a csfloat.com search URL (or a bare query string) into watch filters.
@@ -47,6 +47,10 @@ export function parseCsfloatSearchUrl(input: string): ParsedSearch {
       (query as Record<string, unknown>)[key] = value;
     } else if (key === "type") {
       if (value === "buy_now" || value === "auction") query.type = value as ListingType;
+    } else if (key === "sort_by") {
+      // most_recent is the default, so it is stored as "no sort".
+      if (!isSortBy(value)) ignored.push(`sort_by=${value}`);
+      else if (value !== DEFAULT_SORT) query.sort_by = value;
     } else if (!SKIP_KEYS.has(key)) {
       ignored.push(key);
     }
@@ -74,6 +78,6 @@ export function buildCsfloatSearchUrl(query: CsfloatQuery, seed?: number | null)
     params.set(k, String(v));
   }
   if (seed != null) params.set("paint_seed", String(seed));
-  params.set("sort_by", "most_recent");
+  params.set("sort_by", sortOf(query));
   return `https://csfloat.com/search?${params.toString()}`;
 }

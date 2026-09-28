@@ -1,7 +1,7 @@
 import { diffQuery, mergeDiffs, type DiffOutput } from "@/core/diff";
 import { paginate } from "@/core/paginate";
 import { buildSubQueries, PAGE_LIMIT } from "@/core/queryHash";
-import type { RunRecord } from "@/core/types";
+import { DEFAULT_SORT, sortOf, type RunRecord } from "@/core/types";
 import type { CsfloatClient } from "../csfloat/client";
 import { CsfloatAuthError } from "../csfloat/errors";
 import type { EventBus } from "../events";
@@ -39,12 +39,13 @@ export async function executeRun(deps: WorkerDeps, runId: string): Promise<RunRe
     if (!watch) throw new Error("Watch was deleted");
 
     const outputs: DiffOutput[] = [];
+    const newestFirst = sortOf(watch.query) === DEFAULT_SORT;
     for (const sub of buildSubQueries(watch)) {
       const prev = await store.getQueryState(sub.hash);
       const result = await paginate((cursor) => client.fetchListingsPage(sub.params, cursor), {
         maxPages: watch.maxPages,
         pageSize: PAGE_LIMIT,
-        knownIds: prev ? new Set(Object.keys(prev.seen)) : null,
+        knownIds: prev && newestFirst ? new Set(Object.keys(prev.seen)) : null,
       });
       log.debug({ seed: sub.seed, pages: result.pages, items: result.items.length, stop: result.stoppedBecause }, "sub-query fetched");
       outputs.push(diffQuery({ hash: sub.hash, prev, current: result.items, coveredFully: result.coveredFully, now: new Date() }));

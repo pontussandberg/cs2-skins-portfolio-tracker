@@ -4,8 +4,8 @@ import { useMutation } from "@apollo/client/react";
 import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { parseCsfloatSearchUrl, parseSeedList } from "@/core/csfloatUrl";
-import { SCHEDULE_PRESETS } from "@/core/format";
-import type { CsfloatQuery } from "@/core/types";
+import { SCHEDULE_PRESETS, SORT_LABELS } from "@/core/format";
+import { CSFLOAT_SORTS, DEFAULT_SORT, isSortBy, sortOf, type CsfloatQuery, type SortBy } from "@/core/types";
 import type { CreateWatchMutationVariables } from "@/graphql/__generated__/graphql";
 import { CREATE_WATCH, UPDATE_WATCH } from "@/graphql/operations";
 import { Button, Card, ErrorNote, Field, Input, Select, Textarea, Toggle } from "./ui";
@@ -46,6 +46,7 @@ function initialState(initial?: WatchFormInitial) {
     stickers: str(q.stickers),
     collection: str(q.collection),
     rarity: str(q.rarity),
+    sort_by: isSortBy(q.sort_by) ? q.sort_by : DEFAULT_SORT,
     seeds: (initial?.seeds ?? []).join(", "),
     schedule: preset ? (preset.value ?? MANUAL) : CUSTOM,
     customCron: preset ? "" : (initial?.schedule ?? ""),
@@ -73,7 +74,7 @@ function usdToCents(v: string): number | null {
 function toInput(s: FormState): WatchInputVars {
   const schedule = s.schedule === MANUAL ? null : s.schedule === CUSTOM ? s.customCron.trim() || null : s.schedule;
   return {
-    name: s.name.trim(),
+    name: s.name.trim() || null,
     query: {
       def_index: int(s.def_index),
       paint_index: int(s.paint_index),
@@ -87,6 +88,7 @@ function toInput(s: FormState): WatchInputVars {
       stickers: s.stickers.trim() || null,
       collection: s.collection.trim() || null,
       rarity: int(s.rarity),
+      sort_by: s.sort_by,
     },
     seeds: parseSeedList(s.seeds),
     schedule,
@@ -129,8 +131,8 @@ export function WatchForm({ mode, initial, onSaved }: { mode: "create" | "edit";
       stickers: str(q.stickers),
       collection: str(q.collection),
       rarity: str(q.rarity),
+      sort_by: sortOf(q),
       seeds: parsed.seeds.length ? parsed.seeds.join(", ") : prev.seeds,
-      name: prev.name || q.market_hash_name || `Search ${q.def_index ?? ""}/${q.paint_index ?? ""}`.trim(),
     }));
     const fields = Object.keys(q).length;
     setImportNote(
@@ -167,8 +169,13 @@ export function WatchForm({ mode, initial, onSaved }: { mode: "create" | "edit";
 
       <Card className="grid gap-5 sm:grid-cols-2">
         <SectionTitle title="Item" className="sm:col-span-2" />
-        <Field label="Watch name" htmlFor={id("name")} className="sm:col-span-2">
-          <Input id={id("name")} value={s.name} onChange={(e) => set("name", e.target.value)} placeholder="AK CH blue gems, tier 1" required />
+        <Field
+          label="Watch name (optional)"
+          htmlFor={id("name")}
+          className="sm:col-span-2"
+          hint={mode === "edit" ? "Clear it to rename the watch after its search." : "Leave empty to name it after the search, e.g. ★ Bayonet | Night · Lowest float."}
+        >
+          <Input id={id("name")} value={s.name} onChange={(e) => set("name", e.target.value)} placeholder="Named after the item, stickers and sort" />
         </Field>
         <Field label="def_index (weapon)" htmlFor={id("def")} hint="e.g. 7 = AK-47">
           <Input id={id("def")} inputMode="numeric" value={s.def_index} onChange={(e) => set("def_index", e.target.value)} />
@@ -210,7 +217,25 @@ export function WatchForm({ mode, initial, onSaved }: { mode: "create" | "edit";
             <option value="auction">Auctions only</option>
           </Select>
         </Field>
-        <Field label="Stickers (optional)" htmlFor={id("stk")} hint="CSFloat format: ID|POSITION, comma separated">
+        <Field
+          label="Sort"
+          htmlFor={id("sort")}
+          className="sm:col-span-2"
+          hint={
+            s.sort_by === DEFAULT_SORT
+              ? "Follows the newest listings and alerts on anything new."
+              : "Tracks the top results in this order (max pages × 50) and alerts when a listing enters them."
+          }
+        >
+          <Select id={id("sort")} value={s.sort_by} onChange={(e) => set("sort_by", e.target.value as SortBy)}>
+            {CSFLOAT_SORTS.map((sort) => (
+              <option key={sort} value={sort}>
+                {SORT_LABELS[sort]}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        <Field label="Stickers (optional)" htmlFor={id("stk")} hint='Easiest: import a CSFloat URL. Format: [{"i":663},{"i":663}] (i = sticker id, optional "s" = slot)'>
           <Input id={id("stk")} value={s.stickers} onChange={(e) => set("stickers", e.target.value)} />
         </Field>
         <Field label="Collection (optional)" htmlFor={id("col")} hint="e.g. set_bravo_ii">
@@ -241,7 +266,7 @@ export function WatchForm({ mode, initial, onSaved }: { mode: "create" | "edit";
             <Input id={id("cron")} value={s.customCron} onChange={(e) => set("customCron", e.target.value)} placeholder="*/10 * * * *" className="font-mono" />
           </Field>
         ) : (
-          <Field label="Max pages per seed" htmlFor={id("pages")} hint="50 listings per page. Runs stop early when nothing is new.">
+          <Field label="Max pages per seed" htmlFor={id("pages")} hint={s.sort_by === DEFAULT_SORT ? "50 listings per page. Runs stop early when nothing is new." : "50 listings per page. Every run fetches all of them."}>
             <Input id={id("pages")} inputMode="numeric" value={s.maxPages} onChange={(e) => set("maxPages", e.target.value)} />
           </Field>
         )}

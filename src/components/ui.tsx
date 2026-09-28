@@ -126,20 +126,6 @@ export function Toggle({ checked, onChange, label, description, id }: { checked:
 
 // ---------- Misc ----------
 
-export function IconPlate({ src, alt, size = 72 }: { src: string | null | undefined; alt: string; size?: number }) {
-  return (
-    <div className="clay-sm grid shrink-0 place-items-center rounded-[22px] bg-surface-2" style={{ width: size, height: size }}>
-      {src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={src} alt={alt} width={size - 12} height={size - 12} loading="lazy" className="object-contain drop-shadow-md" />
-      ) : (
-        <span className="text-2xl" aria-hidden>
-          ?
-        </span>
-      )}
-    </div>
-  );
-}
 
 export function Skeleton({ className }: { className?: string }) {
   return <div className={clsx("clay-well animate-pulse", className)} />;

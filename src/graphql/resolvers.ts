@@ -1,11 +1,13 @@
 import { GraphQLError } from "graphql";
 import { buildCsfloatSearchUrl } from "@/core/csfloatUrl";
 import { buildFeed, countUnread, dedupeById } from "@/core/diff";
-import { iconUrl, listingUrl } from "@/core/format";
+import { baseItemName, iconUrl, listingUrl } from "@/core/format";
+import { sortListings, stickersOf } from "@/core/listing";
 import { buildSubQueries } from "@/core/queryHash";
-import type { RunRecord, Watch } from "@/core/types";
+import { sortOf, type ListingSnap, type RunRecord, type Watch } from "@/core/types";
 import type { WatchInputError } from "@/server/watchInput";
 import type { Resolvers } from "./__generated__/resolvers-types";
+import type { GqlContext } from "./context";
 
 function userError(err: unknown): never {
   // Match by name: the runtime is created from instrumentation.ts, which Next bundles separately,
@@ -21,6 +23,18 @@ async function requireWatch(rt: { store: { getWatch(id: string): Promise<Watch |
   const watch = await rt.store.getWatch(id);
   if (!watch) throw new GraphQLError("Watch not found", { extensions: { code: "NOT_FOUND" } });
   return watch;
+}
+
+/** Union of the latest snapshot of every seed, read once per request. */
+function latestListings({ rt, listings }: GqlContext, w: Watch): Promise<ListingSnap[]> {
+  let cached = listings.get(w.id);
+  if (!cached) {
+    cached = Promise.all(buildSubQueries(w).map((s) => rt.store.getQueryState(s.hash))).then((states) =>
+      dedupeById(states.flatMap((s) => s?.lastSnapshot ?? [])),
+    );
+    listings.set(w.id, cached);
+  }
+  return cached;
 }
 
 const RUN_STATUS = { queued: "QUEUED", running: "RUNNING", done: "DONE", failed: "FAILED" } as const;
@@ -73,10 +87,13 @@ export const resolvers: Resolvers = {
     nextRunAt: (w, _a, { rt }) => rt.scheduler.nextRunAt(w.id),
     lastRun: async (w, _a, { rt }) => (await rt.store.listRuns(w.id, 1))[0] ?? null,
     runs: (w, { limit }, { rt }) => rt.store.listRuns(w.id, Math.min(Math.max(limit ?? 20, 1), 200)),
-    currentListings: async (w, _a, { rt }) => {
-      const states = await Promise.all(buildSubQueries(w).map((s) => rt.store.getQueryState(s.hash)));
-      const all = dedupeById(states.flatMap((s) => s?.lastSnapshot ?? []));
-      return all.sort((a, b) => (b.createdAt < a.createdAt ? -1 : b.createdAt > a.createdAt ? 1 : 0));
+    currentListings: async (w, _a, ctx) => sortListings(await latestListings(ctx, w), sortOf(w.query)),
+    itemName: async (w, _a, ctx) => {
+      if (w.query.market_hash_name) return baseItemName(w.query.market_hash_name);
+      // Without a weapon/skin filter (e.g. sticker-only) listings are unrelated items.
+      if (w.query.def_index == null || w.query.paint_index == null) return null;
+      const first = (await latestListings(ctx, w))[0];
+      return first ? baseItemName(first.name) : null;
     },
     csfloatSearchUrl: (w) => buildCsfloatSearchUrl(w.query, w.seeds.length === 1 ? w.seeds[0] : null),
   },
@@ -91,6 +108,7 @@ export const resolvers: Resolvers = {
   Listing: {
     csfloatUrl: (l) => listingUrl(l.id),
     iconUrl: (l) => iconUrl(l.iconUrl),
+    stickerDetails: (l) => stickersOf(l),
   },
 
   FeedItem: {

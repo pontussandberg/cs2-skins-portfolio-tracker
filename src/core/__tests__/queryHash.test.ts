@@ -38,6 +38,16 @@ describe("buildSubQueries", () => {
     expect(after.find((s) => s.seed === 661)!.hash).toBe(before[0]!.hash);
   });
 
+  it("sends the watch's sort and makes it part of the identity", () => {
+    const subs = buildSubQueries({ query: { ...query, sort_by: "lowest_float" }, seeds: [] });
+    expect(subs[0]!.params.sort_by).toBe("lowest_float");
+    expect(subQueryHash({ ...query, sort_by: "lowest_float" }, null)).not.toBe(subQueryHash(query, null));
+  });
+
+  it("keeps existing hashes for watches without a sort", () => {
+    expect(subQueryHash({ ...query, sort_by: "most_recent" }, 661)).toBe(subQueryHash(query, 661));
+  });
+
   it("treats category 0 (any) like no category", () => {
     expect(subQueryHash({ ...query, category: 0 }, null)).toBe(subQueryHash(query, null));
   });

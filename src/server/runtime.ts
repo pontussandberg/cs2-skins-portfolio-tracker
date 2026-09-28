@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { readdirSync, statSync } from "node:fs";
+import path from "node:path";
 import type { SystemStatus, Watch } from "@/core/types";
 import { loadConfig, type AppConfig } from "./config";
 import { CsfloatClient } from "./csfloat/client";
@@ -10,11 +12,13 @@ import { RunQueue } from "./queue/runQueue";
 import { Scheduler } from "./queue/scheduler";
 import { FileStore } from "./store/FileStore";
 import type { Store } from "./store/Store";
-import { normalizeWatchInput } from "./watchInput";
+import { composeWatchName, lookupSearchName } from "./searchName";
+import { normalizeWatchInput, type NormalizedWatchInput } from "./watchInput";
 
 /**
- * Everything long-lived in one object. Stored on globalThis so instrumentation.ts,
- * route handlers and dev hot reloads all share the same instance in one process.
+ * Everything long-lived in one object. Stored on globalThis so instrumentation.ts and route
+ * handlers share one instance per process. In development it is rebuilt when server code
+ * changes (see getRuntime).
  */
 export interface Runtime {
   config: AppConfig;
@@ -35,18 +39,21 @@ export interface Runtime {
 }
 
 const KEY = Symbol.for("csfloat-watcher.runtime");
-type GlobalWithRuntime = typeof globalThis & { [KEY]?: Runtime };
+/** `version` is the server code version the runtime was built from (dev only). */
+type GlobalWithRuntime = typeof globalThis & { [KEY]?: { rt: Runtime; version: number } };
 
 export interface CreateRuntimeOptions {
   /** CLI runs skip cron. */
   scheduler?: boolean;
+  /** Reuse an event bus so open live-update streams survive a dev reload. */
+  bus?: EventBus;
 }
 
 export function createRuntime(opts: CreateRuntimeOptions = {}): Runtime {
   const config = loadConfig();
   const logger = createLogger(config.logLevel);
   const store = new FileStore(config.dataDir);
-  const bus = new EventBus();
+  const bus = opts.bus ?? new EventBus();
   const gate = new RateGate(config.minIntervalMs);
   const client = new CsfloatClient({ apiKey: config.csfloatApiKey, gate, logger });
   const notifier = new DiscordNotifier(config.discordWebhookUrl, config.appUrl, logger);
@@ -71,6 +78,15 @@ export function createRuntime(opts: CreateRuntimeOptions = {}): Runtime {
     },
     logger,
   );
+
+  /** Name for a watch saved without one; one CSFloat request, falling back to the raw filters. */
+  async function nameFor(data: NormalizedWatchInput): Promise<string> {
+    const item = await lookupSearchName((params) => client.fetchListings(params), data.query).catch((err: unknown) => {
+      logger.warn({ err }, "watch name lookup failed");
+      return null;
+    });
+    return composeWatchName(item, data.query, data.seeds.length);
+  }
 
   async function start(): Promise<void> {
     await store.init();
@@ -110,7 +126,7 @@ export function createRuntime(opts: CreateRuntimeOptions = {}): Runtime {
     async createWatch(input) {
       const data = normalizeWatchInput(input, Scheduler.validate);
       const now = new Date().toISOString();
-      const watch: Watch = { id: randomUUID(), ...data, createdAt: now, updatedAt: now, lastSeenAt: now };
+      const watch: Watch = { id: randomUUID(), ...data, name: data.name ?? (await nameFor(data)), createdAt: now, updatedAt: now, lastSeenAt: now };
       await store.saveWatch(watch);
       scheduler.sync(watch);
       bus.emit({ type: "watches.changed" });
@@ -121,7 +137,7 @@ export function createRuntime(opts: CreateRuntimeOptions = {}): Runtime {
       const existing = await store.getWatch(id);
       if (!existing) throw new Error("Watch not found");
       const data = normalizeWatchInput(input, Scheduler.validate);
-      const watch: Watch = { ...existing, ...data, updatedAt: new Date().toISOString() };
+      const watch: Watch = { ...existing, ...data, name: data.name ?? (await nameFor(data)), updatedAt: new Date().toISOString() };
       await store.saveWatch(watch);
       scheduler.sync(watch);
       bus.emit({ type: "watches.changed" });
@@ -148,11 +164,61 @@ export function createRuntime(opts: CreateRuntimeOptions = {}): Runtime {
   return rt;
 }
 
-/** The process-wide runtime (created on first use). */
+const DEV = process.env.NODE_ENV !== "production";
+const CODE_DIRS = ["src/server", "src/core"];
+let versionCache = { at: 0, value: 0 };
+
+/**
+ * Newest modification time of the runtime's source files. Dev only; checked at most once a second.
+ * The runtime outlives Next's hot reload, so without this it would keep running old code.
+ */
+function codeVersion(): number {
+  const now = Date.now();
+  if (now - versionCache.at < 1000) return versionCache.value;
+  let newest = 0;
+  for (const dir of CODE_DIRS) {
+    const root = path.join(/*turbopackIgnore: true*/ process.cwd(), dir);
+    let entries: string[];
+    try {
+      entries = readdirSync(root, { recursive: true, encoding: "utf8" });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      if (!entry.endsWith(".ts") || entry.includes("__tests__")) continue;
+      try {
+        newest = Math.max(newest, statSync(path.join(root, entry)).mtimeMs);
+      } catch {
+        /* deleted between readdir and stat */
+      }
+    }
+  }
+  versionCache = { at: now, value: newest };
+  return newest;
+}
+
+/**
+ * The process-wide runtime (created on first use). In development, when server code has changed
+ * and no run is in progress, the old runtime's cron jobs are stopped and a fresh runtime is built
+ * from the new code, keeping the event bus.
+ */
 export function getRuntime(): Runtime {
   const g = globalThis as GlobalWithRuntime;
-  if (!g[KEY]) g[KEY] = createRuntime();
-  return g[KEY]!;
+  const current = g[KEY];
+  if (!current) {
+    const rt = createRuntime();
+    g[KEY] = { rt, version: DEV ? codeVersion() : 0 };
+    return rt;
+  }
+  if (!DEV) return current.rt;
+
+  const version = codeVersion();
+  if (version <= current.version || current.rt.queue.size > 0) return current.rt;
+  current.rt.scheduler.stopAll();
+  const rt = createRuntime({ bus: current.rt.bus });
+  g[KEY] = { rt, version };
+  rt.logger.info("server code changed; runtime reloaded");
+  return rt;
 }
 
 export async function ensureRuntime(): Promise<Runtime> {

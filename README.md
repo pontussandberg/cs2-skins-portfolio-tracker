@@ -39,7 +39,9 @@ Uses the same `data/` as the app; stop the app first so there's only one writer.
 - Each watch fans out into one sub-query per seed. A sub-query is identified by a hash of its filters + seed.
 - Every sub-query keeps a **seen-set** of listing IDs (last 60 days). A listing is **new** if its ID was never seen for that hash.
 - The first run of a sub-query is a **baseline**: everything is recorded, nothing is flagged. Adding a seed baselines only that seed; changing filters baselines the whole watch.
-- Results are fetched newest-first; paging stops early when a full page has nothing unseen.
+- Results are fetched in the watch's sort order (the `sort_by` from the pasted URL, default newest-first).
+  Newest-first paging stops early when a full page has nothing unseen. Any other sort (e.g.
+  `lowest_float`) tracks the top `maxPages` pages in that order and fetches all of them every run.
 - **Price changed** is tracked for buy-now listings only. **Gone** is only reported when the run saw the full result set.
 - A failed run doesn't touch the baseline.
 

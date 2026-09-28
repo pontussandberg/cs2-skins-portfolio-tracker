@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { CSFLOAT_QUERY_KEYS, type CsfloatQuery } from "@/core/types";
+import { CSFLOAT_QUERY_KEYS, CSFLOAT_SORTS, DEFAULT_SORT, type CsfloatQuery } from "@/core/types";
 
 const QuerySchema = z
   .object({
@@ -15,9 +15,14 @@ const QuerySchema = z
     stickers: z.string().trim().max(500).nullish(),
     collection: z.string().trim().max(100).nullish(),
     rarity: z.number().int().min(0).max(10).nullish(),
+    // most_recent is the default, so it is stored as "no sort".
+    sort_by: z
+      .enum(CSFLOAT_SORTS)
+      .nullish()
+      .transform((v) => (v === DEFAULT_SORT ? null : v)),
   })
-  .refine((q) => q.def_index != null || q.paint_index != null || Boolean(q.market_hash_name) || Boolean(q.collection), {
-    message: "Set at least one of def_index, paint_index, market_hash_name or collection",
+  .refine((q) => q.def_index != null || q.paint_index != null || Boolean(q.market_hash_name) || Boolean(q.collection) || Boolean(q.stickers), {
+    message: "Set at least one of def_index, paint_index, market_hash_name, collection or stickers",
   })
   .refine((q) => q.min_float == null || q.max_float == null || q.min_float <= q.max_float, {
     message: "min_float must be <= max_float",
@@ -27,7 +32,8 @@ const QuerySchema = z
   });
 
 export const WatchInputSchema = z.object({
-  name: z.string().trim().min(1, "Name is required").max(80),
+  /** Empty = generate one from the search (see composeWatchName). */
+  name: z.string().trim().max(80).nullish(),
   query: QuerySchema,
   seeds: z.array(z.number().int().min(0).max(100000)).max(500).nullish(),
   schedule: z.string().trim().max(100).nullish(),
@@ -39,7 +45,8 @@ export const WatchInputSchema = z.object({
 export type WatchInput = z.input<typeof WatchInputSchema>;
 
 export interface NormalizedWatchInput {
-  name: string;
+  /** Null when the caller left it empty. */
+  name: string | null;
   query: CsfloatQuery;
   seeds: number[];
   schedule: string | null;
@@ -73,7 +80,7 @@ export function normalizeWatchInput(raw: unknown, validateCron: (expr: string) =
     if (err) throw new WatchInputError([`schedule: ${err}`]);
   }
   return {
-    name: input.name,
+    name: input.name || null,
     query,
     seeds: [...new Set(input.seeds ?? [])].sort((a, b) => a - b),
     schedule,

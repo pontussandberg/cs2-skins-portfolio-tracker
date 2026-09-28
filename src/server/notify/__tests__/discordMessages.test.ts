@@ -22,4 +22,9 @@ describe("Discord payloads", () => {
     expect(e.description).toContain("$1,234.56");
     expect(e.description).toContain("0.123457");
   });
+
+  it("shows the float rank when the item has one", () => {
+    expect(listingEmbed(snap({ float: 0.0674, lowRank: 32 })).description).toContain("float 0.067400 (#32 low)");
+    expect(listingEmbed(snap({ float: 0.2 })).description).not.toContain("#");
+  });
 });

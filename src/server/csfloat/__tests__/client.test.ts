@@ -16,10 +16,14 @@ const apiListing = {
     market_hash_name: "AK-47 | Case Hardened (Field-Tested)",
     paint_seed: 661,
     float_value: 0.2012,
+    low_rank: 32,
     icon_url: "abc",
     inspect_link: "steam://rungame/730/...",
     is_stattrak: false,
-    stickers: [{ name: "Sticker | Foo" }],
+    stickers: [
+      { stickerId: 2, name: "Sticker | Bar", icon_url: "https://img/bar", slot: 3, wear: 0.5 },
+      { stickerId: 1, name: "Sticker | Foo", icon_url: "https://img/foo", slot: 0 },
+    ],
     extra_field_we_ignore: true,
   },
   seller: { username: "x" },
@@ -63,7 +67,11 @@ describe("CsfloatClient", () => {
     expect(calls[0]).toContain("paint_seed=661");
     expect(calls[0]).toContain("cursor=n1");
     expect(page.cursor).toBe("n2");
-    expect(page.items[0]).toMatchObject({ id: "324288155723370196", price: 123456, seed: 661, stickers: ["Sticker | Foo"] });
+    expect(page.items[0]).toMatchObject({ id: "324288155723370196", price: 123456, seed: 661, stickers: ["Sticker | Bar", "Sticker | Foo"], lowRank: 32, highRank: null });
+    expect(page.items[0]!.stickerDetails).toEqual([
+      { name: "Sticker | Foo", iconUrl: "https://img/foo", slot: 0, wear: null },
+      { name: "Sticker | Bar", iconUrl: "https://img/bar", slot: 3, wear: 0.5 },
+    ]);
   });
 
   it("pauses and retries on 429", async () => {

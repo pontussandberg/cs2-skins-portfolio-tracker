@@ -56,9 +56,9 @@ export function FeedView() {
           }
         />
       ) : (
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {feed.map((item) => (
-            <ListingCard key={item.id} listing={item.listing} kind={item.kind === "PRICE_DROP" ? "PRICE_DROP" : "NEW"} priceBefore={item.priceBefore} watch={item.watch} at={item.at} />
+            <ListingCard key={item.id} listing={item.listing} kind={item.kind === "PRICE_DROP" ? "PRICE_DROP" : "NEW"} priceBefore={item.priceBefore} watch={item.watch} />
           ))}
         </div>
       )}

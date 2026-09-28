@@ -8,7 +8,10 @@ export interface Page {
 export interface PaginateOptions {
   maxPages: number;
   pageSize: number;
-  /** Ids already known for this query; enables early stop. Null on first run. */
+  /**
+   * Ids already known for this query; enables early stop. Null on first run, and for any sort other
+   * than most_recent (a new listing can rank on any page, so the whole window must be fetched).
+   */
   knownIds: Set<string> | null;
 }
 
@@ -21,9 +24,9 @@ export interface PaginateResult {
 }
 
 /**
- * Follow CSFloat cursors, newest first (sort_by=most_recent).
- * Stops when: the result set ends, a full page holds nothing unseen (older pages cannot hold new
- * listings), or maxPages is hit.
+ * Follow CSFloat cursors in the query's sort order.
+ * Stops when: the result set ends, a full page holds nothing unseen (only passed for most_recent,
+ * where older pages cannot hold new listings), or maxPages is hit.
  */
 export async function paginate(
   fetchPage: (cursor: string | null) => Promise<Page>,

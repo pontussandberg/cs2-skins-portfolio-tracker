@@ -31,6 +31,17 @@ type SystemStatus {
   timezone: String!
 }
 
+"CSFloat sort_by values. Keep in sync with CSFLOAT_SORTS in src/core/types.ts."
+enum SortBy {
+  most_recent
+  lowest_price
+  highest_price
+  lowest_float
+  highest_float
+  best_deal
+  highest_discount
+}
+
 "CSFloat /listings filters. Prices in USD cents."
 type CsfloatQuery {
   def_index: Int
@@ -45,6 +56,8 @@ type CsfloatQuery {
   stickers: String
   collection: String
   rarity: Int
+  "Null = most_recent."
+  sort_by: SortBy
 }
 
 input CsfloatQueryInput {
@@ -60,10 +73,13 @@ input CsfloatQueryInput {
   stickers: String
   collection: String
   rarity: Int
+  "Null = most_recent."
+  sort_by: SortBy
 }
 
 input WatchInput {
-  name: String!
+  "Empty or null: named after the search, e.g. \"★ Bayonet | Night · Lowest float\"."
+  name: String
   query: CsfloatQueryInput!
   seeds: [Int!]
   schedule: String
@@ -89,9 +105,11 @@ type Watch {
   nextRunAt: DateTime
   lastRun: Run
   runs(limit: Int = 20): [Run!]!
-  "Union of the latest snapshot of every seed, newest first."
+  "Union of the latest snapshot of every seed, in the watch's sort order."
   currentListings: [Listing!]!
   csfloatSearchUrl: String!
+  "Item this watch searches for, e.g. \"★ Bayonet | Night\". From the filters or the last fetched listings; null before the first run."
+  itemName: String
 }
 
 enum RunTrigger {
@@ -142,12 +160,27 @@ type Listing {
   type: String!
   seed: Int
   float: Float
+  "CSFloat float rank (1 = lowest float of this skin). Null when unranked."
+  lowRank: Int
+  "CSFloat float rank (1 = highest float of this skin). Null when unranked."
+  highRank: Int
   stattrak: Boolean!
   stickers: [String!]!
+  "Stickers with images, in slot order. Older snapshots have names only (iconUrl null)."
+  stickerDetails: [Sticker!]!
   createdAt: DateTime!
   csfloatUrl: String!
   inspectLink: String
   iconUrl: String
+}
+
+type Sticker {
+  name: String!
+  iconUrl: String
+  "0-based position on the weapon"
+  slot: Int
+  "Scrape, 0 = pristine. Null when unknown."
+  wear: Float
 }
 
 type FeedItem {

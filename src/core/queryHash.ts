@@ -1,6 +1,6 @@
 // Server-only (uses node:crypto). Do not import from client components.
 import { createHash } from "node:crypto";
-import { CSFLOAT_QUERY_KEYS, type CsfloatQuery, type SubQuery, type Watch } from "./types";
+import { CSFLOAT_QUERY_KEYS, sortOf, type CsfloatQuery, type SubQuery, type Watch } from "./types";
 
 export const PAGE_LIMIT = 50;
 
@@ -29,7 +29,7 @@ export function baseParams(query: CsfloatQuery): Record<string, string | number>
     if (key === "category" && v === 0) continue; // 0 = any, same as omitting
     params[key] = v as string | number;
   }
-  params.sort_by = "most_recent";
+  params.sort_by = sortOf(query);
   params.limit = PAGE_LIMIT;
   return params;
 }

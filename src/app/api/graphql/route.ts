@@ -26,7 +26,7 @@ async function handle(req: Request): Promise<Response> {
       search: new URL(req.url).search,
       body,
     },
-    context: async () => ({ rt }),
+    context: async () => ({ rt, listings: new Map() }),
   });
 
   const resHeaders = new Headers();

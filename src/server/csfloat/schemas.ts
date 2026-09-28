@@ -14,10 +14,22 @@ const ApiListingSchema = z.object({
     market_hash_name: z.string(),
     paint_seed: z.number().nullish(),
     float_value: z.number().nullish(),
+    low_rank: z.number().int().nullish(),
+    high_rank: z.number().int().nullish(),
     icon_url: z.string().nullish(),
     inspect_link: z.string().nullish(),
     is_stattrak: z.boolean().nullish(),
-    stickers: z.array(z.object({ name: z.string().nullish() })).nullish(),
+    stickers: z
+      .array(
+        z.object({
+          stickerId: z.number().nullish(),
+          name: z.string().nullish(),
+          icon_url: z.string().nullish(),
+          slot: z.number().nullish(),
+          wear: z.number().nullish(),
+        }),
+      )
+      .nullish(),
   }),
 });
 
