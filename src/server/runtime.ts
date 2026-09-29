@@ -59,7 +59,7 @@ export interface Runtime {
 
 const INVENTORY_MAX_AGE_MS = 60 * 60 * 1000;
 
-const KEY = Symbol.for("csfloat-watcher.runtime");
+const KEY = Symbol.for("cs2-skins-portfolio-tracker.runtime");
 /** `version` is the server code version the runtime was built from (dev only). */
 type GlobalWithRuntime = typeof globalThis & { [KEY]?: { rt: Runtime; version: number } };
 

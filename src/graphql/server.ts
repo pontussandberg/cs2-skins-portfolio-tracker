@@ -4,7 +4,7 @@ import { ApolloServer } from "@apollo/server";
 import type { GqlContext } from "./context";
 import { resolvers } from "./resolvers";
 
-const KEY = Symbol.for("csfloat-watcher.apollo");
+const KEY = Symbol.for("cs2-skins-portfolio-tracker.apollo");
 
 interface Cached {
   typeDefs: string;

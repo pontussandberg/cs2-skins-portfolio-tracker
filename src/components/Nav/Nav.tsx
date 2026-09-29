@@ -16,8 +16,8 @@ export function Nav() {
     <Bar>
       <Inner>
         <Brand href="/">
-          <Logo aria-hidden>CF</Logo>
-          <Name>CSFloat Watcher</Name>
+          <Logo aria-hidden>CS</Logo>
+          <Name>CS2 Skins Portfolio Tracker</Name>
         </Brand>
         <Links>
           {LINKS.map((l) => {

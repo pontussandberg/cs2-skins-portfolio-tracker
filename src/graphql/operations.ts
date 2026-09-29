@@ -162,6 +162,7 @@ export const FEED: TypedDocumentNode<FeedQuery, FeedQueryVariables> = gql`
       at
       priceBefore
       runId
+      unread
       listing {
         ...ListingFields
       }

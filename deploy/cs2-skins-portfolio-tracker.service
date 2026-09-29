@@ -1,0 +1,23 @@
+# systemd unit for the Raspberry Pi.
+#   sudo cp deploy/cs2-skins-portfolio-tracker.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now cs2-skins-portfolio-tracker
+#   journalctl -u cs2-skins-portfolio-tracker -f
+[Unit]
+Description=CS2 Skins Portfolio Tracker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=pi
+WorkingDirectory=/opt/cs2-skins-portfolio-tracker
+EnvironmentFile=/opt/cs2-skins-portfolio-tracker/.env.local
+Environment=NODE_ENV=production
+Environment=PORT=3000
+Environment=HOSTNAME=0.0.0.0
+ExecStart=/usr/bin/node server.js
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

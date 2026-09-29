@@ -92,6 +92,16 @@ export const raised = css`
   z-index: ${theme.z.raised};
 `;
 
+/** Accent-coloured inline link or text button, underlined on hover. */
+export const textLink = css`
+  font-weight: 500;
+  color: ${theme.color.accent};
+
+  &:hover {
+    text-decoration: underline;
+  }
+`;
+
 /** Muted helper/secondary text. */
 export const mutedText = css`
   font-size: 0.75rem;

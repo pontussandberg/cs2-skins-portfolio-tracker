@@ -66,7 +66,7 @@ export const theme = {
     lifted: "0 12px 32px rgb(0 0 0 / 0.35)",
   },
   /** Stacking order, lowest first. Modal dialogs use the browser's top layer and sit above all of these. */
-  z: { raised: 10, dragging: 20, nav: 30, status: 40, toast: 50 },
+  z: { raised: 10, dragging: 20, nav: 30, popover: 35, status: 40, toast: 50 },
 } as const;
 
 /** Min-width breakpoints (same as the previous Tailwind ones). */

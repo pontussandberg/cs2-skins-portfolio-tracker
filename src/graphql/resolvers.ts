@@ -1,6 +1,6 @@
 import { GraphQLError } from "graphql";
 import { buildCsfloatSearchUrl } from "@/core/csfloatUrl";
-import { buildFeed, countUnread, dedupeById } from "@/core/diff";
+import { buildFeed, countUnread, dedupeById, isUnread } from "@/core/diff";
 import { baseItemName, iconUrl, listingUrl } from "@/core/format";
 import { sortListings, stickerPercent, stickersOf } from "@/core/listing";
 import { buildPortfolio, type InventorySnapshot, type PortfolioData, type SnapshotMeta } from "@/core/portfolio";
@@ -154,5 +154,9 @@ export const resolvers: Resolvers = {
 
   FeedItem: {
     watch: (f, _a, { rt }) => rt.store.getWatch(f.watchId),
+    unread: async (f, _a, { rt }) => {
+      const watch = await rt.store.getWatch(f.watchId);
+      return !!watch && isUnread(f.at, watch.lastSeenAt);
+    },
   },
 };

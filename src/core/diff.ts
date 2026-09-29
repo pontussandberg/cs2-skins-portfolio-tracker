@@ -111,8 +111,13 @@ export function buildFeed(runs: RunRecord[], limit: number): FeedItem[] {
 }
 
 /** New items in finished runs since the watch was last opened. */
+/** Whether something found at `at` is new to you: after you last viewed its watch (or never viewed). */
+export function isUnread(at: string, lastSeenAt: string | null): boolean {
+  return !lastSeenAt || at > lastSeenAt;
+}
+
 export function countUnread(runs: RunRecord[], lastSeenAt: string | null): number {
   return runs
-    .filter((r) => r.status === "done" && r.finishedAt && (!lastSeenAt || r.finishedAt > lastSeenAt))
+    .filter((r) => r.status === "done" && r.finishedAt && isUnread(r.finishedAt, lastSeenAt))
     .reduce((n, r) => n + r.added.length, 0);
 }

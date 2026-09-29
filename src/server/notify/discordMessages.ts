@@ -63,7 +63,7 @@ export function buildNewItemsPayloads({ watchName, watchUrl, items }: NewItemsMe
   for (let i = 0; i < items.length; i += MAX_EMBEDS) chunks.push(items.slice(i, i + MAX_EMBEDS));
   const header = `**${items.length} new** · ${watchName}${watchUrl ? ` · <${watchUrl}>` : ""}`;
   return chunks.map((chunk, i) => ({
-    username: "CSFloat Watcher",
+    username: "CS2 Skins Portfolio Tracker",
     content: truncate(chunks.length > 1 ? `${header} (${i + 1}/${chunks.length})` : header, 2000),
     embeds: chunk.map(listingEmbed),
     allowed_mentions: { parse: [] },

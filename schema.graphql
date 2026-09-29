@@ -214,6 +214,8 @@ type FeedItem {
   listing: Listing!
   priceBefore: Int
   runId: ID!
+  "Found after you last viewed its watch (opening it or Mark all read). False once seen, or if the watch was deleted."
+  unread: Boolean!
   "Null if the watch was deleted."
   watch: Watch
 }

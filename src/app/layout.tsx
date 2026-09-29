@@ -6,8 +6,8 @@ import { StyledComponentsRegistry } from "@/lib/StyledComponentsRegistry";
 import { theme } from "@/styles/theme";
 
 export const metadata: Metadata = {
-  title: "CSFloat Watcher",
-  description: "Saved CSFloat searches that tell you what's new.",
+  title: "CS2 Skins Portfolio Tracker",
+  description: "Your CS2 skin portfolio and saved CSFloat searches that tell you what's new.",
 };
 
 export const viewport: Viewport = {

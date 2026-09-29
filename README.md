@@ -1,8 +1,8 @@
-# CSFloat Watcher
+# CS2 Skins Portfolio Tracker
 
-Saved CSFloat searches that tell you what's new. Each **watch** is a CSFloat search (item, float range, price, StatTrak, …) plus an optional list of **pattern seeds**. Watches run on a cron schedule or when you press **Run**; every run is diffed against the previous one, and only listings that appeared since then are flagged in the feed and posted to Discord.
+Your CS2 skin portfolio, valued the way you see it (crafts, patterns), plus saved CSFloat searches that tell you what's new. Each **watch** is a CSFloat search (item, float range, price, StatTrak, …) plus an optional list of **pattern seeds**. Watches run on a cron schedule or when you press **Run**; every run is diffed against the previous one, and only listings that appeared since then are flagged in the feed and posted to Discord.
 
-Stack: Next.js (App Router) · GraphQL (Apollo Server + Apollo Client, GraphQL Code Generator) · p-queue + croner · JSON file store · Tailwind UI in the Nord palette.
+Stack: Next.js (App Router) · GraphQL (Apollo Server + Apollo Client, GraphQL Code Generator) · p-queue + croner · JSON file store · styled-components UI in the Nord palette.
 
 ## Quick start (Windows / macOS / Linux)
 
@@ -56,7 +56,7 @@ Market value is CSFloat's float-adjusted price for each item plus attached charm
 
 **Save snapshot** freezes the portfolio (items, prices at that time, your valuations) into `data/snapshots/`. Pick one from the header dropdown to see the portfolio as it was then (read-only), compared with now.
 
-Back up everything in `data/` with `pnpm backup` (copies it to `~/csfloat-watcher-backups/<timestamp>/`, or `BACKUP_DIR`).
+Back up everything in `data/` with `pnpm backup` (copies it to `~/cs2-skins-portfolio-tracker-backups/<timestamp>/`, or `BACKUP_DIR`).
 
 Valuations live in `data/portfolio.json`. They are keyed by name + seed + float, so they survive the asset id changing on trades and storage-unit moves.
 
@@ -80,10 +80,12 @@ deploy/                   systemd unit + packaging script
 Use 64-bit Raspberry Pi OS with Node 22 LTS.
 
 1. On your PC: `bash deploy/package.sh` builds `dist/` (plain JavaScript, no native modules, so it runs on the Pi's arm64).
-2. Copy it over: `rsync -av --delete --exclude data --exclude .env.local dist/ pi@raspberrypi.local:/opt/csfloat-watcher/`
-3. On the Pi, create `/opt/csfloat-watcher/.env.local` (see `.env.example`). Point `DATA_DIR` at a USB SSD if you have one, since every run rewrites JSON files.
-4. Install the service: `sudo cp /opt/csfloat-watcher/csfloat-watcher.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now csfloat-watcher`
-5. Logs: `journalctl -u csfloat-watcher -f`. Open `http://raspberrypi.local:3000`.
+2. Copy it over: `rsync -av --delete --exclude data --exclude .env.local dist/ pi@raspberrypi.local:/opt/cs2-skins-portfolio-tracker/`
+3. On the Pi, create `/opt/cs2-skins-portfolio-tracker/.env.local` (see `.env.example`). Point `DATA_DIR` at a USB SSD if you have one, since every run rewrites JSON files.
+4. Install the service: `sudo cp /opt/cs2-skins-portfolio-tracker/cs2-skins-portfolio-tracker.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl enable --now cs2-skins-portfolio-tracker`
+5. Logs: `journalctl -u cs2-skins-portfolio-tracker -f`. Open `http://raspberrypi.local:3000`.
+
+Already running the old `csfloat-watcher` service? Stop and remove it first (`sudo systemctl disable --now csfloat-watcher && sudo rm /etc/systemd/system/csfloat-watcher.service`), then move `/opt/csfloat-watcher` to `/opt/cs2-skins-portfolio-tracker` (it holds `data/` and `.env.local`) before step 2.
 
 The UI has no login: keep it on your LAN, and use Tailscale for access away from home instead of port-forwarding. Back up `DATA_DIR` now and then.
 

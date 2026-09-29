@@ -36,8 +36,8 @@ export class DiscordNotifier {
   async sendTest(): Promise<void> {
     if (!this.webhookUrl) throw new Error("DISCORD_WEBHOOK_URL is not set");
     await this.post({
-      username: "CSFloat Watcher",
-      content: "Test message from CSFloat Watcher: the webhook works. New items will show up here.",
+      username: "CS2 Skins Portfolio Tracker",
+      content: "Test message from CS2 Skins Portfolio Tracker: the webhook works. New items will show up here.",
       embeds: [],
       allowed_mentions: { parse: [] },
     });

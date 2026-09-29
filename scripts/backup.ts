@@ -2,7 +2,7 @@
  * Copy the whole data directory (watches, portfolio valuations, inventory, run history) to a
  * timestamped folder outside the project, so deleting or re-cloning the project can't lose it.
  *
- *   pnpm backup                 -> ~/csfloat-watcher-backups/<timestamp>/
+ *   pnpm backup                 -> ~/cs2-skins-portfolio-tracker-backups/<timestamp>/
  *   BACKUP_DIR=D:\backups pnpm backup
  *
  * Restore: stop the app and copy a backup folder's contents back into data/.
@@ -19,7 +19,7 @@ try {
 }
 
 const dataDir = path.resolve(process.env.DATA_DIR || "data");
-const backupRoot = path.resolve(process.env.BACKUP_DIR || path.join(homedir(), "csfloat-watcher-backups"));
+const backupRoot = path.resolve(process.env.BACKUP_DIR || path.join(homedir(), "cs2-skins-portfolio-tracker-backups"));
 const target = path.join(backupRoot, new Date().toISOString().replace(/[:.]/g, "-"));
 
 await stat(dataDir).catch(() => {

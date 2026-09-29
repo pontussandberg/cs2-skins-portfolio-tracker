@@ -1,8 +1,8 @@
 @echo off
 setlocal
 cd /d "%~dp0"
-title CSFloat Watcher
-echo === CSFloat Watcher ===
+title CS2 Skins Portfolio Tracker
+echo === CS2 Skins Portfolio Tracker ===
 where node >nul 2>nul
 if errorlevel 1 (
   echo.

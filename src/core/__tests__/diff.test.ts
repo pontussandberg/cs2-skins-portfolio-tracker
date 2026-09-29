@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { buildFeed, countUnread, diffQuery, mergeDiffs } from "../diff";
+import { buildFeed, countUnread, diffQuery, isUnread, mergeDiffs } from "../diff";
 import type { RunRecord } from "../types";
 import { snap } from "./fixtures";
 
@@ -114,5 +114,11 @@ describe("feed + unread", () => {
     ];
     expect(countUnread(runs, null)).toBe(3);
     expect(countUnread(runs, "2026-09-27T10:05:00.000Z")).toBe(1);
+  });
+
+  it("treats anything after lastSeenAt, or never seen, as unread", () => {
+    expect(isUnread("2026-09-27T10:05:00.000Z", null)).toBe(true);
+    expect(isUnread("2026-09-27T10:05:00.000Z", "2026-09-27T10:00:00.000Z")).toBe(true);
+    expect(isUnread("2026-09-27T10:05:00.000Z", "2026-09-27T10:05:00.000Z")).toBe(false);
   });
 });
