@@ -1,4 +1,4 @@
-import { formatFloat, formatFloatRank, formatPrice, formatStickerPercent, iconUrl, listingUrl } from "@/core/format";
+import { charmLabel, formatFloat, formatFloatRank, formatPercent, formatPrice, formatStickerPercent, iconUrl, listingUrl } from "@/core/format";
 import { stickerPercent } from "@/core/listing";
 import type { ListingSnap } from "@/core/types";
 
@@ -41,6 +41,9 @@ export function listingEmbed(l: ListingSnap): DiscordEmbed {
     `float ${formatFloat(l.float)}${rank ? ` (${rank})` : ""}`,
     l.type === "auction" ? "auction" : "buy now",
   ];
+  if (l.bluePercent != null) details.push(`${formatPercent(l.bluePercent)} blue`);
+  if (l.fadePercent != null) details.push(`${formatPercent(l.fadePercent)} fade${l.fadeRank != null ? ` (#${l.fadeRank})` : ""}`);
+  if (l.charms?.length) details.push(`charm: ${l.charms.map((c) => charmLabel(c.name)).join(", ")}`);
   if (l.stickers.length) {
     const sp = stickerPercent(l);
     details.push(`stickers: ${l.stickers.slice(0, 4).join(", ")}${sp != null ? ` (${formatStickerPercent(sp)})` : ""}`);

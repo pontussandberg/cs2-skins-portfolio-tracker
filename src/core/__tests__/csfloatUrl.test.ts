@@ -37,6 +37,14 @@ describe("parseCsfloatSearchUrl", () => {
     expect(r.ignored).toEqual([]);
   });
 
+  it("maps blue %, fade % and charm filters", () => {
+    const { query, ignored } = parseCsfloatSearchUrl(
+      "https://csfloat.com/search?category=1&sort_by=most_recent&max_float=0.27&def_index=514&paint_index=44&min_blue=50&max_fade=99.5&keychains=%5B%7B%22i%22%3A20%7D%5D",
+    );
+    expect(query).toEqual({ category: 1, max_float: 0.27, def_index: 514, paint_index: 44, min_blue: 50, max_fade: 99.5, keychains: '[{"i":20}]' });
+    expect(ignored).toEqual([]);
+  });
+
   it("accepts a bare query string", () => {
     expect(parseCsfloatSearchUrl("market_hash_name=AK-47%20%7C%20Redline%20(Field-Tested)").query).toEqual({
       market_hash_name: "AK-47 | Redline (Field-Tested)",

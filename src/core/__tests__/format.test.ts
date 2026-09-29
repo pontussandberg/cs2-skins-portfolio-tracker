@@ -9,6 +9,12 @@ describe("baseItemName", () => {
   });
 });
 
+describe("describeQuery: pattern and charm filters", () => {
+  it("labels blue and fade ranges and counts charms", () => {
+    expect(describeQuery({ def_index: 514, min_blue: 50, min_fade: 90, max_fade: 99.5, keychains: '[{"i":20}]' })).toEqual(["1 charm", "Blue ≥ 50%", "Fade 90%–99.5%"]);
+  });
+});
+
 describe("describeQuery", () => {
   it("summarises sort and filters", () => {
     expect(describeQuery({ def_index: 500, sort_by: "lowest_float", max_float: 0.07, category: 2, type: "buy_now", max_price: 50000 })).toEqual([

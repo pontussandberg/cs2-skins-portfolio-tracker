@@ -1,7 +1,7 @@
 import { GraphQLError } from "graphql";
 import { buildCsfloatSearchUrl } from "@/core/csfloatUrl";
 import { buildFeed, countUnread, dedupeById, isUnread } from "@/core/diff";
-import { baseItemName, iconUrl, listingUrl } from "@/core/format";
+import { baseItemName, iconUrl, listingUrl, screenshotUrls } from "@/core/format";
 import { sortListings, stickerPercent, stickersOf } from "@/core/listing";
 import { buildPortfolio, type InventorySnapshot, type PortfolioData, type SnapshotMeta } from "@/core/portfolio";
 import { buildSubQueries } from "@/core/queryHash";
@@ -151,6 +151,8 @@ export const resolvers: Resolvers = {
     iconUrl: (l) => iconUrl(l.iconUrl),
     stickerDetails: (l) => stickersOf(l),
     stickerPercent: (l) => stickerPercent(l),
+    charms: (l) => l.charms ?? [],
+    screenshots: (l) => (l.screenshotId ? screenshotUrls(l.screenshotId) : null),
   },
 
   FeedItem: {

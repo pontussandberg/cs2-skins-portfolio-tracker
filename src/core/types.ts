@@ -31,12 +31,20 @@ export interface CsfloatQuery {
   market_hash_name?: string | null;
   min_float?: number | null;
   max_float?: number | null;
+  /** Case Hardened blue % on the play side, 0-100. */
+  min_blue?: number | null;
+  max_blue?: number | null;
+  /** Fade %, 0-100. */
+  min_fade?: number | null;
+  max_fade?: number | null;
   /** 0 any, 1 normal, 2 StatTrak, 3 souvenir */
   category?: number | null;
   min_price?: number | null;
   max_price?: number | null;
   type?: ListingType | null;
   stickers?: string | null;
+  /** Charm filter, same format as stickers: [{"i":20}] (i = charm id). */
+  keychains?: string | null;
   collection?: string | null;
   rarity?: number | null;
   /** CSFloat search preset, e.g. "sticker_combos" (4+ of the same sticker). Passed through as-is. */
@@ -48,22 +56,33 @@ export interface CsfloatQuery {
   sort_by?: SortBy | null;
 }
 
-export const CSFLOAT_QUERY_KEYS = [
-  "def_index",
-  "paint_index",
-  "market_hash_name",
-  "min_float",
-  "max_float",
-  "category",
-  "min_price",
-  "max_price",
-  "type",
-  "stickers",
-  "collection",
-  "rarity",
-  "filter",
-  "sort_by",
-] as const satisfies readonly (keyof CsfloatQuery)[];
+/**
+ * Every CSFloat query param we support, with how its URL value is read. The key list, the URL
+ * parser and the validation schema are all derived from or checked against this one list.
+ */
+export const CSFLOAT_QUERY_PARAMS = {
+  def_index: "int",
+  paint_index: "int",
+  market_hash_name: "string",
+  min_float: "float",
+  max_float: "float",
+  min_blue: "float",
+  max_blue: "float",
+  min_fade: "float",
+  max_fade: "float",
+  category: "int",
+  min_price: "int",
+  max_price: "int",
+  type: "listingType",
+  stickers: "string",
+  keychains: "string",
+  collection: "string",
+  rarity: "int",
+  filter: "string",
+  sort_by: "sort",
+} as const satisfies Record<keyof CsfloatQuery, "int" | "float" | "string" | "listingType" | "sort">;
+
+export const CSFLOAT_QUERY_KEYS = Object.keys(CSFLOAT_QUERY_PARAMS) as (keyof CsfloatQuery)[];
 
 /** A saved search. */
 export interface Watch {
@@ -123,6 +142,15 @@ export interface ListingSnap {
   basePrice?: number | null;
   /** CSFloat's total reference value of the stickers, USD cents (used for the sticker percentage). */
   stickerValue?: number | null;
+  /** Attached charms, same shape as stickers. */
+  charms?: StickerSnap[];
+  /** Case Hardened blue % on the play side. */
+  bluePercent?: number | null;
+  /** Fade % and its rank among all known items of this skin (1 = best). */
+  fadePercent?: number | null;
+  fadeRank?: number | null;
+  /** CSFloat's in-game screenshot of this item (see screenshotUrl). */
+  screenshotId?: string | null;
   stattrak: boolean;
 }
 

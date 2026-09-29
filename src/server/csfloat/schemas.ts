@@ -14,6 +14,8 @@ const ApiStickerSchema = z.object({
   reference: z.object({ price: z.number().nullish() }).nullish(),
 });
 
+const ApiListingStickerSchema = ApiStickerSchema.extend({ stickerId: z.number().nullish() });
+
 const ApiListingSchema = z.object({
   id: z.coerce.string(),
   created_at: z.string(),
@@ -36,7 +38,11 @@ const ApiListingSchema = z.object({
     icon_url: z.string().nullish(),
     inspect_link: z.string().nullish(),
     is_stattrak: z.boolean().nullish(),
-    stickers: z.array(ApiStickerSchema.extend({ stickerId: z.number().nullish() })).nullish(),
+    stickers: z.array(ApiListingStickerSchema).nullish(),
+    keychains: z.array(ApiListingStickerSchema).nullish(),
+    blue_gem: z.object({ playside_blue: z.number().nullish() }).nullish(),
+    fade: z.object({ percentage: z.number().nullish(), rank: z.number().int().nullish() }).nullish(),
+    cs2_screenshot_id: z.coerce.string().nullish(),
   }),
 });
 

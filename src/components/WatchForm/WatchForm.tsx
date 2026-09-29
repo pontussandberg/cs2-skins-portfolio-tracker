@@ -6,7 +6,7 @@ import { useId, useState, type FormEvent, type ReactNode } from "react";
 import { Button, ErrorNote, Field, Input, Select, Textarea, Toggle } from "@/components/ui";
 import { parseCsfloatSearchUrl, parseSeedList } from "@/core/csfloatUrl";
 import { FILTER_LABELS, SCHEDULE_PRESETS, SORT_LABELS } from "@/core/format";
-import { CSFLOAT_SORTS, DEFAULT_SORT, isSortBy, sortOf, type CsfloatQuery, type SortBy } from "@/core/types";
+import { CSFLOAT_SORTS, DEFAULT_SORT, isSortBy, type CsfloatQuery, type SortBy } from "@/core/types";
 import type { CreateWatchMutationVariables } from "@/graphql/__generated__/graphql";
 import { CREATE_WATCH, UPDATE_WATCH } from "@/graphql/operations";
 import {
@@ -43,25 +43,36 @@ const MANUAL = "__manual__";
 const str = (v: unknown) => (v === null || v === undefined ? "" : String(v));
 const centsToUsd = (v: unknown) => (v === null || v === undefined || v === "" ? "" : (Number(v) / 100).toFixed(2));
 
-function initialState(initial?: WatchFormInitial) {
-  const q = initial?.query ?? {};
-  const preset = SCHEDULE_PRESETS.find((p) => p.value === (initial?.schedule ?? null));
+/** The search filters as form field text (used on load and when importing a URL). */
+function queryFields(q: WatchFormInitial["query"]) {
   return {
-    name: initial?.name ?? "",
     def_index: str(q.def_index),
     paint_index: str(q.paint_index),
     market_hash_name: str(q.market_hash_name),
     min_float: str(q.min_float),
     max_float: str(q.max_float),
+    min_blue: str(q.min_blue),
+    max_blue: str(q.max_blue),
+    min_fade: str(q.min_fade),
+    max_fade: str(q.max_fade),
     category: str(q.category ?? 0),
     min_price: centsToUsd(q.min_price),
     max_price: centsToUsd(q.max_price),
     type: str(q.type),
     stickers: str(q.stickers),
+    keychains: str(q.keychains),
     collection: str(q.collection),
     rarity: str(q.rarity),
     filter: str(q.filter),
     sort_by: isSortBy(q.sort_by) ? q.sort_by : DEFAULT_SORT,
+  };
+}
+
+function initialState(initial?: WatchFormInitial) {
+  const preset = SCHEDULE_PRESETS.find((p) => p.value === (initial?.schedule ?? null));
+  return {
+    name: initial?.name ?? "",
+    ...queryFields(initial?.query ?? {}),
     seeds: (initial?.seeds ?? []).join(", "),
     schedule: preset ? (preset.value ?? MANUAL) : CUSTOM,
     customCron: preset ? "" : (initial?.schedule ?? ""),
@@ -96,11 +107,16 @@ function toInput(s: FormState): WatchInputVars {
       market_hash_name: s.market_hash_name.trim() || null,
       min_float: float(s.min_float),
       max_float: float(s.max_float),
+      min_blue: float(s.min_blue),
+      max_blue: float(s.max_blue),
+      min_fade: float(s.min_fade),
+      max_fade: float(s.max_fade),
       category: int(s.category),
       min_price: usdToCents(s.min_price),
       max_price: usdToCents(s.max_price),
       type: s.type || null,
       stickers: s.stickers.trim() || null,
+      keychains: s.keychains.trim() || null,
       collection: s.collection.trim() || null,
       rarity: int(s.rarity),
       filter: s.filter || null,
@@ -135,20 +151,7 @@ export function WatchForm({ mode, initial, onSaved }: { mode: "create" | "edit";
     const q = parsed.query;
     setS((prev) => ({
       ...prev,
-      def_index: str(q.def_index),
-      paint_index: str(q.paint_index),
-      market_hash_name: str(q.market_hash_name),
-      min_float: str(q.min_float),
-      max_float: str(q.max_float),
-      category: str(q.category ?? 0),
-      min_price: centsToUsd(q.min_price),
-      max_price: centsToUsd(q.max_price),
-      type: str(q.type),
-      stickers: str(q.stickers),
-      collection: str(q.collection),
-      rarity: str(q.rarity),
-      filter: str(q.filter),
-      sort_by: sortOf(q),
+      ...queryFields(q),
       seeds: parsed.seeds.length ? parsed.seeds.join(", ") : prev.seeds,
     }));
     const fields = Object.keys(q).length;
@@ -213,6 +216,18 @@ export function WatchForm({ mode, initial, onSaved }: { mode: "create" | "edit";
         <Field label="Max float" htmlFor={id("maxf")}>
           <Input id={id("maxf")} inputMode="decimal" value={s.max_float} onChange={(e) => set("max_float", e.target.value)} placeholder="1.00" />
         </Field>
+        <Field label="Min blue %" htmlFor={id("minb")} hint="Case Hardened: blue on the play side, 0-100.">
+          <Input id={id("minb")} inputMode="decimal" value={s.min_blue} onChange={(e) => set("min_blue", e.target.value)} placeholder="e.g. 50" />
+        </Field>
+        <Field label="Max blue %" htmlFor={id("maxb")}>
+          <Input id={id("maxb")} inputMode="decimal" value={s.max_blue} onChange={(e) => set("max_blue", e.target.value)} placeholder="100" />
+        </Field>
+        <Field label="Min fade %" htmlFor={id("minfd")} hint="Fade skins, 0-100.">
+          <Input id={id("minfd")} inputMode="decimal" value={s.min_fade} onChange={(e) => set("min_fade", e.target.value)} placeholder="e.g. 95" />
+        </Field>
+        <Field label="Max fade %" htmlFor={id("maxfd")}>
+          <Input id={id("maxfd")} inputMode="decimal" value={s.max_fade} onChange={(e) => set("max_fade", e.target.value)} placeholder="100" />
+        </Field>
         <Field label="Min price (USD)" htmlFor={id("minp")}>
           <Input id={id("minp")} inputMode="decimal" value={s.min_price} onChange={(e) => set("min_price", e.target.value)} />
         </Field>
@@ -265,6 +280,9 @@ export function WatchForm({ mode, initial, onSaved }: { mode: "create" | "edit";
         </Field>
         <Field label="Stickers (optional)" htmlFor={id("stk")} hint='Easiest: import a CSFloat URL. Format: [{"i":663},{"i":663}] (i = sticker id, optional "s" = slot)'>
           <Input id={id("stk")} value={s.stickers} onChange={(e) => set("stickers", e.target.value)} />
+        </Field>
+        <Field label="Charms (optional)" htmlFor={id("kc")} hint='Easiest: import a CSFloat URL. Format: [{"i":20}] (i = charm id)'>
+          <Input id={id("kc")} value={s.keychains} onChange={(e) => set("keychains", e.target.value)} />
         </Field>
         <Field label="Collection (optional)" htmlFor={id("col")} hint="e.g. set_bravo_ii">
           <Input id={id("col")} value={s.collection} onChange={(e) => set("collection", e.target.value)} />

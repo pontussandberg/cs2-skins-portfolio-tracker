@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { ApiListing } from "@/core/listing";
 import { composeWatchName, lookupSearchName } from "../searchName";
 
-function listing(name: string, stickers: { stickerId: number; name: string }[] = []): ApiListing {
-  return { id: "1", created_at: "2026-09-27T10:00:00Z", type: "buy_now", price: 100, item: { market_hash_name: name, stickers } };
+function listing(name: string, stickers: { stickerId: number; name: string }[] = [], keychains: { stickerId: number; name: string }[] = []): ApiListing {
+  return { id: "1", created_at: "2026-09-27T10:00:00Z", type: "buy_now", price: 100, item: { market_hash_name: name, stickers, keychains } };
 }
 
 function fake(listings: ApiListing[]) {
@@ -24,6 +24,13 @@ describe("lookupSearchName", () => {
   it("combines item and stickers", async () => {
     const f = fake([listing("★ StatTrak™ Bayonet | Night (Field-Tested)", [titan])]);
     expect(await lookupSearchName(f.fetch, { def_index: 500, paint_index: 40, stickers: '[{"i":663}]' })).toBe("★ Bayonet | Night · Titan (Foil) | Cologne 2015");
+  });
+
+  it("names a charm-only search after the charm", async () => {
+    const f = fake([listing("AWP | Redline (Field-Tested)", [], [{ stickerId: 20, name: "Charm | Titeenium AWP" }])]);
+    expect(await lookupSearchName(f.fetch, { keychains: '[{"i":20}]' })).toBe("Titeenium AWP");
+    expect(f.calls[0]).toMatchObject({ keychains: '[{"i":20}]' });
+    expect(await lookupSearchName(fake([]).fetch, { keychains: '[{"i":20}]' })).toBe("charm 20");
   });
 
   it("falls back to sticker ids when nothing matches", async () => {

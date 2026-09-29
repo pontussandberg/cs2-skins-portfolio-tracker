@@ -18,7 +18,11 @@ export interface ApiListing {
     icon_url?: string | null;
     inspect_link?: string | null;
     is_stattrak?: boolean | null;
-    stickers?: (ApiSticker & { stickerId?: number | null })[] | null;
+    stickers?: ApiListingSticker[] | null;
+    keychains?: ApiListingSticker[] | null;
+    blue_gem?: { playside_blue?: number | null } | null;
+    fade?: { percentage?: number | null; rank?: number | null } | null;
+    cs2_screenshot_id?: string | null;
   };
 }
 
@@ -31,12 +35,20 @@ export interface ApiSticker {
   reference?: { price?: number | null } | null;
 }
 
+/** On listings, stickers and charms also carry CSFloat's id for them. */
+export type ApiListingSticker = ApiSticker & { stickerId?: number | null };
+
 /** Named stickers (or charms), in slot order. */
 export function toStickerSnaps(list: ApiSticker[] | null | undefined): StickerSnap[] {
   return (list ?? [])
     .filter((s) => s.name)
     .map((s) => ({ name: s.name!, iconUrl: s.icon_url ?? null, slot: s.slot ?? null, wear: s.wear ?? null, price: s.reference?.price ?? null }))
     .sort((a, b) => (a.slot ?? 99) - (b.slot ?? 99));
+}
+
+/** `obj` without its null and undefined values. */
+function defined<T extends Record<string, unknown>>(obj: T): { [K in keyof T]?: NonNullable<T[K]> } {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v != null)) as { [K in keyof T]?: NonNullable<T[K]> };
 }
 
 export function toSnap(l: ApiListing): ListingSnap {
@@ -57,6 +69,14 @@ export function toSnap(l: ApiListing): ListingSnap {
     stickerDetails: toStickerSnaps(l.item.stickers),
     basePrice: l.reference?.base_price ?? null,
     stickerValue: l.reference?.sticker_overpay?.total_price ?? null,
+    // Rare extras are only stored when present, to keep snapshot files small.
+    ...defined({
+      charms: l.item.keychains?.length ? toStickerSnaps(l.item.keychains) : undefined,
+      bluePercent: l.item.blue_gem?.playside_blue,
+      fadePercent: l.item.fade?.percentage,
+      fadeRank: l.item.fade?.rank,
+      screenshotId: l.item.cs2_screenshot_id,
+    }),
     stattrak: Boolean(l.item.is_stattrak),
   };
 }

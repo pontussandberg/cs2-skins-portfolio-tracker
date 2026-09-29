@@ -1,18 +1,30 @@
 import { z } from "zod";
 import { CSFLOAT_QUERY_KEYS, CSFLOAT_SORTS, DEFAULT_SORT, type CsfloatQuery } from "@/core/types";
 
-const QuerySchema = z
-  .object({
+/** Paired bounds that must not cross. */
+const RANGES = [
+  ["min_float", "max_float"],
+  ["min_blue", "max_blue"],
+  ["min_fade", "max_fade"],
+  ["min_price", "max_price"],
+] as const;
+
+const QueryShape = {
     def_index: z.number().int().min(0).nullish(),
     paint_index: z.number().int().min(0).nullish(),
     market_hash_name: z.string().trim().max(200).nullish(),
     min_float: z.number().min(0).max(1).nullish(),
     max_float: z.number().min(0).max(1).nullish(),
+    min_blue: z.number().min(0).max(100).nullish(),
+    max_blue: z.number().min(0).max(100).nullish(),
+    min_fade: z.number().min(0).max(100).nullish(),
+    max_fade: z.number().min(0).max(100).nullish(),
     category: z.number().int().min(0).max(3).nullish(),
     min_price: z.number().int().min(0).nullish(),
     max_price: z.number().int().min(0).nullish(),
     type: z.enum(["buy_now", "auction"]).nullish(),
     stickers: z.string().trim().max(500).nullish(),
+    keychains: z.string().trim().max(500).nullish(),
     collection: z.string().trim().max(100).nullish(),
     rarity: z.number().int().min(0).max(10).nullish(),
     filter: z.string().trim().max(50).nullish(),
@@ -21,15 +33,19 @@ const QuerySchema = z
       .enum(CSFLOAT_SORTS)
       .nullish()
       .transform((v) => (v === DEFAULT_SORT ? null : v)),
+} satisfies Record<keyof CsfloatQuery, z.ZodType>;
+
+const QuerySchema = z
+  .object(QueryShape)
+  .refine((q) => q.def_index != null || q.paint_index != null || Boolean(q.market_hash_name) || Boolean(q.collection) || Boolean(q.stickers) || Boolean(q.keychains) || Boolean(q.filter), {
+    message: "Set at least one of def_index, paint_index, market_hash_name, collection, stickers, charms or filter",
   })
-  .refine((q) => q.def_index != null || q.paint_index != null || Boolean(q.market_hash_name) || Boolean(q.collection) || Boolean(q.stickers) || Boolean(q.filter), {
-    message: "Set at least one of def_index, paint_index, market_hash_name, collection, stickers or filter",
-  })
-  .refine((q) => q.min_float == null || q.max_float == null || q.min_float <= q.max_float, {
-    message: "min_float must be <= max_float",
-  })
-  .refine((q) => q.min_price == null || q.max_price == null || q.min_price <= q.max_price, {
-    message: "min_price must be <= max_price",
+  .superRefine((q, ctx) => {
+    for (const [min, max] of RANGES) {
+      const lo = q[min];
+      const hi = q[max];
+      if (lo != null && hi != null && lo > hi) ctx.addIssue({ code: "custom", message: `${min} must be <= ${max}` });
+    }
   });
 
 export const WatchInputSchema = z.object({

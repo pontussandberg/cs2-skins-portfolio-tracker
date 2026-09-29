@@ -67,11 +67,19 @@ type CsfloatQuery {
   market_hash_name: String
   min_float: Float
   max_float: Float
+  "Case Hardened blue % on the play side, 0-100."
+  min_blue: Float
+  max_blue: Float
+  "Fade %, 0-100."
+  min_fade: Float
+  max_fade: Float
   category: Int
   min_price: Int
   max_price: Int
   type: String
   stickers: String
+  "Charm filter, same format as stickers: [{\"i\":20}]."
+  keychains: String
   collection: String
   rarity: Int
   "CSFloat search preset, e.g. sticker_combos."
@@ -86,11 +94,19 @@ input CsfloatQueryInput {
   market_hash_name: String
   min_float: Float
   max_float: Float
+  "Case Hardened blue % on the play side, 0-100."
+  min_blue: Float
+  max_blue: Float
+  "Fade %, 0-100."
+  min_fade: Float
+  max_fade: Float
   category: Int
   min_price: Int
   max_price: Int
   type: String
   stickers: String
+  "Charm filter, same format as stickers: [{\"i\":20}]."
+  keychains: String
   collection: String
   rarity: Int
   "CSFloat search preset, e.g. sticker_combos."
@@ -192,6 +208,16 @@ type Listing {
   stickerDetails: [Sticker!]!
   "CSFloat sticker percentage (SP): share of the stickers' value asked on top of the item's reference price. Null when unknown."
   stickerPercent: Float
+  "Attached charms (same shape as stickers)."
+  charms: [Sticker!]!
+  "Case Hardened blue % on the play side. Null for other skins."
+  bluePercent: Float
+  "Fade %. Null for non-fade skins."
+  fadePercent: Float
+  "Fade rank among all known items of this skin (1 = best)."
+  fadeRank: Int
+  "CSFloat's in-game screenshots (full-size PNGs). Null when CSFloat has none."
+  screenshots: Screenshots
   createdAt: DateTime!
   csfloatUrl: String!
   inspectLink: String
@@ -325,4 +351,9 @@ type PortfolioTotals {
   market: Int!
   "Reference value of all applied stickers."
   stickers: Int!
+}
+
+type Screenshots {
+  playside: String!
+  backside: String!
 }

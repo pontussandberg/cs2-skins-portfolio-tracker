@@ -1,4 +1,4 @@
-import { DEFAULT_SORT, isSortBy, sortOf, type CsfloatQuery, type ListingType } from "./types";
+import { CSFLOAT_QUERY_PARAMS, DEFAULT_SORT, isSortBy, sortOf, type CsfloatQuery, type ListingType } from "./types";
 
 export interface ParsedSearch {
   query: CsfloatQuery;
@@ -7,9 +7,6 @@ export interface ParsedSearch {
   ignored: string[];
 }
 
-const INT_KEYS = ["def_index", "paint_index", "category", "min_price", "max_price", "rarity"] as const;
-const FLOAT_KEYS = ["min_float", "max_float"] as const;
-const STRING_KEYS = ["market_hash_name", "stickers", "collection", "filter"] as const;
 const SKIP_KEYS = new Set(["limit", "cursor", "page"]);
 
 /**
@@ -37,17 +34,18 @@ export function parseCsfloatSearchUrl(input: string): ParsedSearch {
         const n = Number.parseInt(part.trim(), 10);
         if (Number.isFinite(n)) seeds.add(n);
       }
-    } else if ((INT_KEYS as readonly string[]).includes(key)) {
-      const n = Number.parseInt(value, 10);
-      if (Number.isFinite(n)) (query as Record<string, unknown>)[key] = n;
-    } else if ((FLOAT_KEYS as readonly string[]).includes(key)) {
-      const n = Number.parseFloat(value);
-      if (Number.isFinite(n)) (query as Record<string, unknown>)[key] = n;
-    } else if ((STRING_KEYS as readonly string[]).includes(key)) {
-      (query as Record<string, unknown>)[key] = value;
-    } else if (key === "type") {
+      continue;
+    }
+    const kind = Object.hasOwn(CSFLOAT_QUERY_PARAMS, key) ? CSFLOAT_QUERY_PARAMS[key as keyof CsfloatQuery] : null;
+    const set = (v: unknown) => ((query as Record<string, unknown>)[key] = v);
+    if (kind === "int" || kind === "float") {
+      const n = kind === "int" ? Number.parseInt(value, 10) : Number.parseFloat(value);
+      if (Number.isFinite(n)) set(n);
+    } else if (kind === "string") {
+      set(value);
+    } else if (kind === "listingType") {
       if (value === "buy_now" || value === "auction") query.type = value as ListingType;
-    } else if (key === "sort_by") {
+    } else if (kind === "sort") {
       // most_recent is the default, so it is stored as "no sort".
       if (!isSortBy(value)) ignored.push(`sort_by=${value}`);
       else if (value !== DEFAULT_SORT) query.sort_by = value;

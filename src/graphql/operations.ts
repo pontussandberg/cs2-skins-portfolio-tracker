@@ -70,6 +70,16 @@ export const LISTING_FIELDS = gql`
       ...StickerFields
     }
     stickerPercent
+    charms {
+      ...StickerFields
+    }
+    bluePercent
+    fadePercent
+    fadeRank
+    screenshots {
+      playside
+      backside
+    }
     createdAt
     csfloatUrl
     inspectLink
@@ -120,11 +130,16 @@ export const QUERY_FIELDS = gql`
     market_hash_name
     min_float
     max_float
+    min_blue
+    max_blue
+    min_fade
+    max_fade
     category
     min_price
     max_price
     type
     stickers
+    keychains
     collection
     rarity
     filter

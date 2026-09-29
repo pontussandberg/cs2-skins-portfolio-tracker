@@ -4,9 +4,10 @@ import { CopyInspect } from "@/components/CopyInspect";
 import { FloatInfo } from "@/components/FloatInfo";
 import { ItemMedia, type AttachmentView } from "@/components/ItemMedia";
 import { Price, PriceRow, SubPrice, Tile, TileBody, TileFooter, TileName } from "@/components/ItemTile";
+import { ScreenshotViewer } from "@/components/ScreenshotViewer";
 import { Badge } from "@/components/ui";
-import { formatPrice, formatStickerPercent, timeAgo } from "@/core/format";
-import { NameLink, WatchLink } from "./ListingCard.styles";
+import { formatPercent, formatPrice, formatStickerPercent, timeAgo } from "@/core/format";
+import { FooterActions, NameLink, WatchLink } from "./ListingCard.styles";
 
 export interface ListingView {
   id: string;
@@ -20,6 +21,11 @@ export interface ListingView {
   stattrak: boolean;
   stickerDetails: AttachmentView[];
   stickerPercent?: number | null;
+  charms?: AttachmentView[];
+  bluePercent?: number | null;
+  fadePercent?: number | null;
+  fadeRank?: number | null;
+  screenshots?: { playside: string; backside: string } | null;
   createdAt: string;
   csfloatUrl: string;
   inspectLink?: string | null;
@@ -51,11 +57,21 @@ export function ListingCard({
         iconUrl={listing.iconUrl}
         name={listing.name}
         rank={listing}
-        attachments={listing.stickerDetails}
+        attachments={[...listing.stickerDetails, ...(listing.charms ?? [])]}
         topEnd={
           <>
             {kind === "NEW" ? <Badge tone="success">New</Badge> : null}
             {kind === "PRICE_DROP" ? <Badge tone="danger">Price drop</Badge> : null}
+            {listing.bluePercent != null ? (
+              <Badge tone="info" caps={false} title="Case Hardened blue % (play side)">
+                {formatPercent(listing.bluePercent)} blue
+              </Badge>
+            ) : null}
+            {listing.fadePercent != null ? (
+              <Badge tone="warning" caps={false} title={`Fade %${listing.fadeRank != null ? `, rank #${listing.fadeRank} for this skin` : ""}`}>
+                {formatPercent(listing.fadePercent)} fade
+              </Badge>
+            ) : null}
             {listing.stattrak ? <Badge tone="warning">ST</Badge> : null}
             {listing.type === "auction" ? <Badge tone="info">Auction</Badge> : null}
           </>
@@ -85,7 +101,10 @@ export function ListingCard({
 
         <TileFooter>
           {watch ? <WatchLink href={`/watches/${watch.id}`}>{watch.name}</WatchLink> : <span title={listing.createdAt}>{timeAgo(listing.createdAt)}</span>}
-          <CopyInspect link={listing.inspectLink} />
+          <FooterActions>
+            {listing.screenshots ? <ScreenshotViewer name={listing.name} screenshots={listing.screenshots} csfloatUrl={listing.csfloatUrl} /> : null}
+            <CopyInspect link={listing.inspectLink} />
+          </FooterActions>
         </TileFooter>
       </TileBody>
     </Tile>

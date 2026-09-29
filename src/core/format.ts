@@ -21,6 +21,12 @@ export function listingUrl(id: string): string {
   return `https://csfloat.com/item/${id}`;
 }
 
+/** CSFloat's full-size in-game screenshots of both sides of an item (~600 KB PNGs). */
+export function screenshotUrls(id: string): { playside: string; backside: string } {
+  const base = `https://csfloat.pics/m/${encodeURIComponent(id)}`;
+  return { playside: `${base}/playside.png`, backside: `${base}/backside.png` };
+}
+
 export function iconUrl(raw: string | null | undefined, size = 256): string | null {
   if (!raw) return null;
   if (/^https?:\/\//.test(raw)) return raw;
@@ -126,15 +132,21 @@ export function formatScrape(wear: number | null | undefined): string | null {
 }
 
 /**
- * "4× Titan (Foil) | Cologne 2015 + sticker 5021": the filter's stickers, counted, using `names`
- * (sticker id -> label) where known and the raw id otherwise. "Stickers" for a filter we can't read.
+ * "4× Titan (Foil) | Cologne 2015 + sticker 5021": the filter's stickers (or charms, with
+ * `noun` "charm"), counted, using `names` (id -> label) where known and the raw id otherwise.
+ * "Stickers" / "Charms" for a filter we can't read.
  */
-export function describeStickers(text: string, names?: ReadonlyMap<number, string>): string {
+export function describeStickers(text: string, names?: ReadonlyMap<number, string>, noun: "sticker" | "charm" = "sticker"): string {
   const stickers = parseStickerFilter(text);
-  if (!stickers) return "Stickers";
+  if (!stickers) return noun === "charm" ? "Charms" : "Stickers";
   const counts = new Map<number, number>();
   for (const s of stickers) counts.set(s.id, (counts.get(s.id) ?? 0) + 1);
-  return [...counts].map(([id, n]) => `${n > 1 ? `${n}× ` : ""}${names?.get(id) ?? `sticker ${id}`}`).join(" + ");
+  return [...counts].map(([id, n]) => `${n > 1 ? `${n}× ` : ""}${names?.get(id) ?? `${noun} ${id}`}`).join(" + ");
+}
+
+/** "Charm | Titeenium AWP" -> "Titeenium AWP". */
+export function charmLabel(name: string): string {
+  return name.replace(/^Charm \| /, "");
 }
 
 const floatText = (v: number) => String(Number(v.toFixed(6)));
@@ -152,23 +164,37 @@ export function describeQuery(q: QueryLike): string[] {
   const out: string[] = [];
   const sort = sortLabel(q.sort_by);
   if (sort) out.push(sort);
-  if (q.min_float != null && q.max_float != null) out.push(`Float ${floatText(q.min_float)}–${floatText(q.max_float)}`);
-  else if (q.min_float != null) out.push(`Float ≥ ${floatText(q.min_float)}`);
-  else if (q.max_float != null) out.push(`Float ≤ ${floatText(q.max_float)}`);
+  const float = describeRange("Float", q.min_float, q.max_float, floatText);
+  if (float) out.push(float);
   if (q.min_price != null && q.max_price != null) out.push(`${formatPrice(q.min_price)}–${formatPrice(q.max_price)}`);
   else if (q.min_price != null) out.push(`≥ ${formatPrice(q.min_price)}`);
   else if (q.max_price != null) out.push(`≤ ${formatPrice(q.max_price)}`);
   if (q.category) out.push(CATEGORY_LABELS[q.category] ?? `Category ${q.category}`);
   if (q.type) out.push(q.type === "buy_now" ? "Buy now" : "Auctions");
-  if (q.stickers) {
-    // Count only: sticker ids mean nothing on their own, and the watch name carries the sticker names.
-    const n = parseStickerFilter(q.stickers)?.length;
-    out.push(n ? `${n} sticker${n === 1 ? "" : "s"}` : "Stickers");
+  // Counts only: sticker and charm ids mean nothing on their own, and the watch name carries the names.
+  if (q.stickers) out.push(countAttachments(q.stickers, "sticker"));
+  if (q.keychains) out.push(countAttachments(q.keychains, "charm"));
+  for (const range of [describeRange("Blue", q.min_blue, q.max_blue, formatPercent), describeRange("Fade", q.min_fade, q.max_fade, formatPercent)]) {
+    if (range) out.push(range);
   }
   if (q.collection) out.push(q.collection);
   if (q.rarity != null) out.push(`Rarity ${q.rarity}`);
   if (q.filter) out.push(FILTER_LABELS[q.filter] ?? q.filter);
   return out;
+}
+
+/** "Blue 50%–80%", "Float ≥ 0.1", "Blue ≤ 10%", or null when neither bound is set. */
+function describeRange(label: string, min: number | null | undefined, max: number | null | undefined, format: (n: number) => string): string | null {
+  if (min != null && max != null) return `${label} ${format(min)}–${format(max)}`;
+  if (min != null) return `${label} ≥ ${format(min)}`;
+  if (max != null) return `${label} ≤ ${format(max)}`;
+  return null;
+}
+
+/** "3 stickers", "1 charm", or "Stickers" / "Charms" for a filter we can't read. */
+function countAttachments(text: string, noun: "sticker" | "charm"): string {
+  const n = parseStickerFilter(text)?.length;
+  return n ? `${n} ${noun}${n === 1 ? "" : "s"}` : noun === "charm" ? "Charms" : "Stickers";
 }
 
 /** "15%", "12.5%": at most one decimal. */

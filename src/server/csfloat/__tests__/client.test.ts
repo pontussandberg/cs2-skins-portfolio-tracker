@@ -21,6 +21,9 @@ const apiListing = {
     icon_url: "abc",
     inspect_link: "steam://rungame/730/...",
     is_stattrak: false,
+    cs2_screenshot_id: "3752978620153463426",
+    blue_gem: { playside_blue: 54.2, backside_blue: 53.9 },
+    keychains: [{ stickerId: 20, name: "Charm | Titeenium AWP", slot: 0, reference: { price: 290 } }],
     stickers: [
       { stickerId: 2, name: "Sticker | Bar", icon_url: "https://img/bar", slot: 3, wear: 0.5, reference: { price: 2500, quantity: 3 } },
       { stickerId: 1, name: "Sticker | Foo", icon_url: "https://img/foo", slot: 0 },
@@ -69,6 +72,8 @@ describe("CsfloatClient", () => {
     expect(calls[0]).toContain("cursor=n1");
     expect(page.cursor).toBe("n2");
     expect(page.items[0]).toMatchObject({ id: "324288155723370196", price: 123456, seed: 661, stickers: ["Sticker | Bar", "Sticker | Foo"], lowRank: 32, highRank: null, basePrice: 100000, stickerValue: 2500 });
+    expect(page.items[0]).toMatchObject({ screenshotId: "3752978620153463426", bluePercent: 54.2, charms: [{ name: "Charm | Titeenium AWP", price: 290 }] });
+    expect(page.items[0]).not.toHaveProperty("fadePercent");
     expect(page.items[0]!.stickerDetails).toEqual([
       { name: "Sticker | Foo", iconUrl: "https://img/foo", slot: 0, wear: null, price: null },
       { name: "Sticker | Bar", iconUrl: "https://img/bar", slot: 3, wear: 0.5, price: 2500 },
