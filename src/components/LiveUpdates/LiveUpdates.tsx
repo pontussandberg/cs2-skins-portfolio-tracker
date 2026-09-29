@@ -10,6 +10,7 @@ type ServerEvent =
   | { type: "run.finished"; watchId: string; runId: string; watchName: string; added: number; priceChanged: number; gone: number; baseline: boolean }
   | { type: "run.failed"; watchId: string; runId: string; error: string }
   | { type: "watches.changed" }
+  | { type: "portfolio.changed" }
   | { type: "scheduler.suspended"; reason: string };
 
 interface ToastData {
@@ -20,7 +21,10 @@ interface ToastData {
   href?: string;
 }
 
-/** Listens to /api/events and refetches active queries; shows toasts for results. */
+/** Portfolio events only affect the Portfolio query; everything else (runs, watches) affects the rest. */
+const affectsQuery = (eventType: ServerEvent["type"], queryName: string | undefined) => (eventType === "portfolio.changed") === (queryName === "Portfolio");
+
+/** Listens to /api/events and refetches the active queries each event affects; shows toasts for results. */
 export function LiveUpdates() {
   const client = useApolloClient();
   const [toasts, setToasts] = useState<ToastData[]>([]);
@@ -34,10 +38,17 @@ export function LiveUpdates() {
       setToasts((list) => [...list.slice(-3), { ...t, id }]);
       setTimeout(() => setToasts((list) => list.filter((x) => x.id !== id)), 8000);
     };
-    const refetchSoon = () => {
+    // Events arriving within 250ms are batched into one refetch of the queries any of them affect.
+    const pendingTypes = new Set<ServerEvent["type"]>();
+    const refetchSoon = (type: ServerEvent["type"]) => {
+      pendingTypes.add(type);
       if (refetchTimer.current) clearTimeout(refetchTimer.current);
       refetchTimer.current = setTimeout(() => {
-        client.refetchQueries({ include: "active" }).catch(() => undefined);
+        const types = [...pendingTypes];
+        pendingTypes.clear();
+        client
+          .refetchQueries({ include: "active", onQueryUpdated: (query) => types.some((t) => affectsQuery(t, query.queryName)) })
+          .catch(() => undefined);
       }, 250);
     };
 
@@ -51,7 +62,7 @@ export function LiveUpdates() {
       } catch {
         return;
       }
-      refetchSoon();
+      refetchSoon(event.type);
       if (event.type === "run.finished" && !event.baseline && event.added > 0) {
         push({ tone: "success", title: `${event.added} new · ${event.watchName}`, href: `/watches/${event.watchId}` });
       } else if (event.type === "run.finished" && event.baseline) {

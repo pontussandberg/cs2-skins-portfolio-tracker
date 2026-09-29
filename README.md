@@ -45,6 +45,21 @@ Uses the same `data/` as the app; stop the app first so there's only one writer.
 - **Price changed** is tracked for buy-now listings only. **Gone** is only reported when the run saw the full result set.
 - A failed run doesn't touch the baseline.
 
+## Portfolio
+
+`/portfolio` lists the Steam inventory of the account that owns `CSFLOAT_API_KEY` (read from CSFloat's `/me/inventory`, so floats, stickers and prices come along; storage units are not included). It syncs on first open, again in the background when the last sync is over an hour old, and on **Sync inventory**.
+
+Market value is CSFloat's float-adjusted price for each item plus attached charms. Click an item to set what it is actually worth:
+
+- **Craft %**: the share of the stickers' reference value the craft adds (a default applies to crafted items without their own %).
+- **Skin value**: market, a multiple of market (patterns, floats), or a fixed price.
+
+**Save snapshot** freezes the portfolio (items, prices at that time, your valuations) into `data/snapshots/`. Pick one from the header dropdown to see the portfolio as it was then (read-only), compared with now.
+
+Back up everything in `data/` with `pnpm backup` (copies it to `~/csfloat-watcher-backups/<timestamp>/`, or `BACKUP_DIR`).
+
+Valuations live in `data/portfolio.json`. They are keyed by name + seed + float, so they survive the asset id changing on trades and storage-unit moves.
+
 ## Project layout
 
 ```text

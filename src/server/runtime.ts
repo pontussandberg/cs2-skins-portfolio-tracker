@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readdirSync, statSync } from "node:fs";
 import path from "node:path";
+import { buildPortfolio, portfolioTotals, type InventorySnapshot, type PortfolioData, type PortfolioSnapshot } from "@/core/portfolio";
 import type { SystemStatus, Watch } from "@/core/types";
 import { loadConfig, type AppConfig } from "./config";
 import { CsfloatClient } from "./csfloat/client";
@@ -13,6 +14,7 @@ import { Scheduler } from "./queue/scheduler";
 import { FileStore } from "./store/FileStore";
 import type { Store } from "./store/Store";
 import { composeWatchName, lookupSearchName } from "./searchName";
+import { normalizeSettingsInput, normalizeSnapshotLabel, normalizeValuationInput } from "./portfolioInput";
 import { normalizeWatchInput, type NormalizedWatchInput } from "./watchInput";
 
 /**
@@ -38,7 +40,24 @@ export interface Runtime {
   /** Save the dashboard order; returns all watches in the new order. */
   reorderWatches(ids: string[]): Promise<Watch[]>;
   markWatchSeen(id: string): Promise<Watch>;
+
+  /**
+   * The last inventory sync. Syncs first when there is none; when it is older than
+   * INVENTORY_MAX_AGE_MS, returns it and re-syncs in the background.
+   */
+  getInventory(): Promise<InventorySnapshot | null>;
+  /** Fetch the inventory from CSFloat now (joins a sync already in progress). */
+  syncInventory(): Promise<InventorySnapshot>;
+  inventoryStatus(): { syncing: boolean; error: string | null };
+  /** Save your valuation of an item (by itemKey); all fields empty removes it. */
+  setValuation(key: string, input: unknown): Promise<PortfolioData>;
+  setPortfolioSettings(input: unknown): Promise<PortfolioData>;
+  /** Freeze the current inventory (as last synced), its prices and your valuations. */
+  takeSnapshot(label: unknown): Promise<PortfolioSnapshot>;
+  deleteSnapshot(id: string): Promise<boolean>;
 }
+
+const INVENTORY_MAX_AGE_MS = 60 * 60 * 1000;
 
 const KEY = Symbol.for("csfloat-watcher.runtime");
 /** `version` is the server code version the runtime was built from (dev only). */
@@ -88,6 +107,29 @@ export function createRuntime(opts: CreateRuntimeOptions = {}): Runtime {
       return null;
     });
     return composeWatchName(item, data.query, data.seeds.length);
+  }
+
+  let inventorySync: Promise<InventorySnapshot> | null = null;
+  let inventoryError: string | null = null;
+
+  function syncInventory(): Promise<InventorySnapshot> {
+    inventorySync ??= (async () => {
+      try {
+        const snapshot: InventorySnapshot = { syncedAt: new Date().toISOString(), items: await client.fetchInventory() };
+        await store.saveInventory(snapshot);
+        inventoryError = null;
+        logger.info({ items: snapshot.items.length }, "inventory synced");
+        return snapshot;
+      } catch (err) {
+        inventoryError = err instanceof Error ? err.message : String(err);
+        logger.warn({ err }, "inventory sync failed");
+        throw err;
+      } finally {
+        inventorySync = null;
+        bus.emit({ type: "portfolio.changed" });
+      }
+    })();
+    return inventorySync;
   }
 
   async function start(): Promise<void> {
@@ -162,6 +204,57 @@ export function createRuntime(opts: CreateRuntimeOptions = {}): Runtime {
       await store.deleteWatch(id);
       bus.emit({ type: "watches.changed" });
       return true;
+    },
+
+    async getInventory() {
+      const snapshot = await store.getInventory();
+      if (!snapshot) return client.configured ? syncInventory().catch(() => null) : null;
+      if (!inventorySync && !inventoryError && Date.now() - Date.parse(snapshot.syncedAt) > INVENTORY_MAX_AGE_MS) {
+        syncInventory().catch(() => undefined);
+      }
+      return snapshot;
+    },
+
+    syncInventory,
+
+    inventoryStatus() {
+      return { syncing: inventorySync !== null, error: inventoryError };
+    },
+
+    async setValuation(key, input) {
+      const v = normalizeValuationInput(input);
+      const data = await store.getPortfolio();
+      const valuations = { ...data.valuations };
+      if (Object.values(v).every((x) => x === null)) delete valuations[key];
+      else valuations[key] = { ...v, updatedAt: new Date().toISOString() };
+      const next = { ...data, valuations };
+      await store.savePortfolio(next);
+      bus.emit({ type: "portfolio.changed" });
+      return next;
+    },
+
+    async setPortfolioSettings(input) {
+      const next = { ...(await store.getPortfolio()), settings: normalizeSettingsInput(input) };
+      await store.savePortfolio(next);
+      bus.emit({ type: "portfolio.changed" });
+      return next;
+    },
+
+    async takeSnapshot(rawLabel) {
+      const label = normalizeSnapshotLabel(rawLabel);
+      const [inventory, portfolio] = await Promise.all([store.getInventory(), store.getPortfolio()]);
+      if (!inventory) throw new Error("Sync your inventory before saving a snapshot");
+      const totals = portfolioTotals(buildPortfolio(inventory.items, portfolio).map((e) => e.value));
+      const snapshot: PortfolioSnapshot = { id: randomUUID(), label, takenAt: new Date().toISOString(), totals, inventory, portfolio };
+      await store.saveSnapshot(snapshot);
+      bus.emit({ type: "portfolio.changed" });
+      return snapshot;
+    },
+
+    async deleteSnapshot(id) {
+      const deleted = await store.deleteSnapshot(id);
+      if (deleted) bus.emit({ type: "portfolio.changed" });
+      return deleted;
     },
 
     async markWatchSeen(id) {

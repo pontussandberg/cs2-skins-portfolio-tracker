@@ -1,6 +1,6 @@
 import styled, { css } from "styled-components";
 import { Card } from "@/components/ui";
-import { eyebrow, mutedBody, stack, tabular, wrapRow } from "@/styles/shared";
+import { eyebrow, mutedBody, mutedText, stack, tabular, toolbar, wrapRow } from "@/styles/shared";
 import { alpha, theme } from "@/styles/theme";
 
 export const Root = styled.div`
@@ -85,4 +85,12 @@ export const DangerTitle = styled.h2`
 
 export const DangerText = styled.p`
   ${mutedBody}
+`;
+
+export const ListingToolbar = styled.div`
+  ${toolbar}
+`;
+
+export const SortHint = styled.p`
+  ${mutedText}
 `;

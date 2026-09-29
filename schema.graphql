@@ -7,6 +7,12 @@ type Query {
   "New listings and price drops across all watches, newest first."
   feed(limit: Int = 100): [FeedItem!]!
   system: SystemStatus!
+  "Your items and their value. Synced from CSFloat when missing; re-synced in the background when over an hour old."
+  portfolio: Portfolio!
+  "Your portfolio as it was when a snapshot was saved (read-only). Null if the snapshot doesn't exist."
+  portfolioSnapshot(id: ID!): Portfolio
+  "Saved snapshots, newest first."
+  portfolioSnapshots: [PortfolioSnapshot!]!
 }
 
 type Mutation {
@@ -22,6 +28,14 @@ type Mutation {
   markAllSeen: Boolean!
   sendTestNotification: Boolean!
   resumeScheduler: SystemStatus!
+  "Fetch your inventory from CSFloat now."
+  syncInventory: Portfolio!
+  "Save your valuation of an item. All fields null resets it to market value."
+  setValuation(key: ID!, input: ValuationInput!): Portfolio!
+  setPortfolioSettings(input: PortfolioSettingsInput!): Portfolio!
+  "Freeze the current inventory (as last synced), its prices and your valuations."
+  takePortfolioSnapshot(label: String): PortfolioSnapshot!
+  deletePortfolioSnapshot(id: ID!): Boolean!
 }
 
 type SystemStatus {
@@ -202,4 +216,109 @@ type FeedItem {
   runId: ID!
   "Null if the watch was deleted."
   watch: Watch
+}
+
+"Your owned items (from CSFloat's inventory endpoint) valued with your own premiums. Prices in USD cents."
+type Portfolio {
+  "\"portfolio\" for the live one (lets mutations update it in the cache), \"snapshot:<id>\" for a snapshot."
+  id: ID!
+  "Set when this is a saved snapshot rather than the live portfolio."
+  snapshot: PortfolioSnapshot
+  "Null before the first successful sync."
+  syncedAt: DateTime
+  syncing: Boolean!
+  "Why the last sync failed; null once one succeeds."
+  syncError: String
+  settings: PortfolioSettings!
+  "Most valuable first."
+  items: [PortfolioItem!]!
+}
+
+type PortfolioSettings {
+  "Craft % for items with stickers that have no craft % of their own."
+  defaultCraftPercent: Float!
+}
+
+input PortfolioSettingsInput {
+  defaultCraftPercent: Float!
+}
+
+type PortfolioItem {
+  "Unique per portfolio (live and each snapshot have their own), for caching."
+  id: ID!
+  "Stable item key for valuations and comparing snapshots: survives asset id changes (trades, storage units) for items with a float."
+  key: ID!
+  name: String!
+  "CSFloat item type: skin, agent, container, charm, collectible, music_kit, ..."
+  type: String!
+  iconUrl: String
+  float: Float
+  seed: Int
+  lowRank: Int
+  highRank: Int
+  stattrak: Boolean!
+  souvenir: Boolean!
+  tradable: Boolean!
+  "The CSFloat listing when the item is listed for sale."
+  csfloatUrl: String
+  inspectLink: String
+  stickers: [Sticker!]!
+  "Attached charms."
+  charms: [Sticker!]!
+  valuation: Valuation
+  value: ItemValue!
+}
+
+type Valuation {
+  "Share of the sticker value the craft adds (15 = +15%). Null = portfolio default."
+  craftPercent: Float
+  "Skin value as a multiple of market price."
+  multiplier: Float
+  "Fixed skin value; wins over multiplier."
+  skinPrice: Int
+  note: String
+  updatedAt: DateTime!
+}
+
+input ValuationInput {
+  craftPercent: Float
+  multiplier: Float
+  skinPrice: Int
+  note: String
+}
+
+type ItemValue {
+  "CSFloat's price for the item itself (float-adjusted)."
+  market: Int!
+  "Your value for the item itself: market, x multiplier, or fixed."
+  skin: Int!
+  "Reference value of the applied stickers."
+  stickers: Int!
+  "Craft % used (own or default; 0 without stickers)."
+  craftPercent: Float!
+  "What the craft adds: stickers x craftPercent."
+  craft: Int!
+  "Attached charms at reference price."
+  charms: Int!
+  "skin + craft + charms"
+  total: Int!
+  "market + charms: what the market pays without your premiums."
+  marketTotal: Int!
+}
+
+type PortfolioSnapshot {
+  id: ID!
+  label: String
+  takenAt: DateTime!
+  totals: PortfolioTotals!
+}
+
+type PortfolioTotals {
+  items: Int!
+  "Your valuation of everything."
+  value: Int!
+  "Market value of everything (item prices + charms)."
+  market: Int!
+  "Reference value of all applied stickers."
+  stickers: Int!
 }

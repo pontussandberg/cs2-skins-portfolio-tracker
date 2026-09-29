@@ -98,4 +98,43 @@ describe("FileStore", () => {
       ["a", 2],
     ]);
   });
+
+  it("defaults the portfolio and persists valuations and the inventory", async () => {
+    const a = new FileStore(dir);
+    await a.init();
+    expect(await a.getInventory()).toBeNull();
+    expect(await a.getPortfolio()).toEqual({ settings: { defaultCraftPercent: 0 }, valuations: {} });
+
+    const valuation = { craftPercent: 10, multiplier: null, skinPrice: null, note: "blue gem", updatedAt: "t" };
+    await a.savePortfolio({ settings: { defaultCraftPercent: 5 }, valuations: { k: valuation } });
+    await a.saveInventory({ syncedAt: "t", items: [] });
+
+    const b = new FileStore(dir);
+    expect(await b.getPortfolio()).toEqual({ settings: { defaultCraftPercent: 5 }, valuations: { k: valuation } });
+    expect(await b.getInventory()).toEqual({ syncedAt: "t", items: [] });
+  });
+
+  it("lists snapshots newest first and ignores unsafe ids", async () => {
+    const s = new FileStore(dir);
+    await s.init();
+    const snap = (id: string, takenAt: string) => ({
+      id,
+      label: null,
+      takenAt,
+      totals: { items: 0, value: 0, market: 0, stickers: 0 },
+      inventory: { syncedAt: takenAt, items: [] },
+      portfolio: { settings: { defaultCraftPercent: 0 }, valuations: {} },
+    });
+    await s.saveSnapshot(snap("a", "2026-09-01T00:00:00.000Z"));
+    await s.saveSnapshot(snap("b", "2026-09-02T00:00:00.000Z"));
+    expect((await s.listSnapshots()).map((m) => m.id)).toEqual(["b", "a"]);
+    expect((await s.getSnapshot("a"))?.inventory.syncedAt).toBe("2026-09-01T00:00:00.000Z");
+    expect(await s.getSnapshot("../portfolio")).toBeNull();
+    await expect(s.saveSnapshot(snap("../x", "t"))).rejects.toThrow();
+
+    expect(await s.deleteSnapshot("a")).toBe(true);
+    expect(await s.deleteSnapshot("a")).toBe(false);
+    expect((await s.listSnapshots()).map((m) => m.id)).toEqual(["b"]);
+    expect((await new FileStore(dir).listSnapshots()).map((m) => m.id)).toEqual(["b"]);
+  });
 });

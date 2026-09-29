@@ -7,6 +7,7 @@ export * from "./EmptyState";
 export * from "./ErrorNote";
 export * from "./Field";
 export * from "./Input";
+export * from "./Modal";
 export * from "./PageHeader";
 export * from "./Select";
 export * from "./Skeleton";

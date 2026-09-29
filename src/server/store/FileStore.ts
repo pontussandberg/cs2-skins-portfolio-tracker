@@ -1,22 +1,32 @@
 import { mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { applyOrder } from "@/core/order";
+import { EMPTY_PORTFOLIO, type InventorySnapshot, type PortfolioData, type PortfolioSnapshot, type SnapshotMeta } from "@/core/portfolio";
 import type { QueryState, RunRecord, Watch } from "@/core/types";
 import type { Store } from "./Store";
 
 const RUNS_PER_WATCH = 200;
+/** Snapshot ids become file names: allow only what randomUUID produces. */
+const SNAPSHOT_ID = /^[a-z0-9-]{1,64}$/i;
+
+const toMeta = ({ id, label, takenAt, totals }: SnapshotMeta): SnapshotMeta => ({ id, label, takenAt, totals });
 
 /**
  * JSON-on-disk store.
  *   data/watches.json              all watch configs
  *   data/state/<queryHash>.json    last snapshot + seen-set per sub-query
  *   data/runs/<watchId>.json       run history, newest first, capped
+ *   data/inventory.json            last inventory sync (a cache; re-synced from CSFloat)
+ *   data/portfolio.json            valuations and settings you entered (back this one up)
+ *   data/snapshots/<id>.json       portfolio snapshots you saved
  * Single process, single writer (the queue runs one job at a time), atomic writes.
  */
 export class FileStore implements Store {
   private watches: Map<string, Watch> | null = null;
   private runs = new Map<string, RunRecord[]>();
   private runsLoaded = false;
+  /** Snapshot summaries by id, loaded once (snapshot files are large; lists only need these). */
+  private snapshotMetas: Map<string, SnapshotMeta> | null = null;
   private writeChain: Promise<void> = Promise.resolve();
 
   constructor(private dir: string) {}
@@ -107,6 +117,50 @@ export class FileStore implements Store {
       .slice(0, limit);
   }
 
+  // ---- portfolio ----
+
+  getInventory(): Promise<InventorySnapshot | null> {
+    return this.readJson<InventorySnapshot>("inventory.json");
+  }
+
+  saveInventory(snapshot: InventorySnapshot): Promise<void> {
+    return this.writeJson("inventory.json", snapshot);
+  }
+
+  async getPortfolio(): Promise<PortfolioData> {
+    const data = await this.readJson<Partial<PortfolioData>>("portfolio.json");
+    return { settings: { ...EMPTY_PORTFOLIO.settings, ...data?.settings }, valuations: data?.valuations ?? {} };
+  }
+
+  savePortfolio(data: PortfolioData): Promise<void> {
+    return this.writeJson("portfolio.json", data);
+  }
+
+  async listSnapshots(): Promise<SnapshotMeta[]> {
+    const metas = [...(await this.loadSnapshotMetas()).values()];
+    return metas.sort((a, b) => (b.takenAt < a.takenAt ? -1 : b.takenAt > a.takenAt ? 1 : 0));
+  }
+
+  getSnapshot(id: string): Promise<PortfolioSnapshot | null> {
+    if (!SNAPSHOT_ID.test(id)) return Promise.resolve(null);
+    return this.readJson<PortfolioSnapshot>(path.join("snapshots", `${id}.json`));
+  }
+
+  async saveSnapshot(snapshot: PortfolioSnapshot): Promise<void> {
+    if (!SNAPSHOT_ID.test(snapshot.id)) throw new Error(`Invalid snapshot id: ${snapshot.id}`);
+    const metas = await this.loadSnapshotMetas();
+    await this.writeJson(path.join("snapshots", `${snapshot.id}.json`), snapshot);
+    metas.set(snapshot.id, toMeta(snapshot));
+  }
+
+  async deleteSnapshot(id: string): Promise<boolean> {
+    const metas = await this.loadSnapshotMetas();
+    if (!metas.has(id)) return false;
+    await rm(path.join(this.dir, "snapshots", `${id}.json`), { force: true });
+    metas.delete(id);
+    return true;
+  }
+
   // ---- internals ----
 
   private async loadWatches(): Promise<Map<string, Watch>> {
@@ -118,6 +172,20 @@ export class FileStore implements Store {
       this.watches = new Map(list.map((w, position) => [w.id, { ...w, position }]));
     }
     return this.watches;
+  }
+
+  private async loadSnapshotMetas(): Promise<Map<string, SnapshotMeta>> {
+    if (!this.snapshotMetas) {
+      let files: string[] = [];
+      try {
+        files = (await readdir(path.join(this.dir, "snapshots"))).filter((f) => f.endsWith(".json"));
+      } catch {
+        /* no snapshots yet */
+      }
+      const snapshots = await Promise.all(files.map((f) => this.readJson<PortfolioSnapshot>(path.join("snapshots", f))));
+      this.snapshotMetas = new Map(snapshots.filter((s) => s !== null).map((s) => [s.id, toMeta(s)]));
+    }
+    return this.snapshotMetas;
   }
 
   private async loadRuns(): Promise<void> {

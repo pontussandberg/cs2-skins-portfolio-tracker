@@ -142,6 +142,18 @@ export const wrapRow = css`
   gap: 0.375rem;
 `;
 
+/** Row of filter/sort controls above a grid; selects shrink to their content. */
+export const toolbar = css`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+
+  & > select {
+    width: auto;
+  }
+`;
+
 /** Full width in a two-column form grid (from the sm breakpoint). */
 export const spanBothColumns = css`
   ${media.sm} {

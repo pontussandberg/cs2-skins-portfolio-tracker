@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { baseItemName, describeQuery, describeStickers, parseStickerFilter } from "../format";
+import { baseItemName, describeQuery, describeStickers, formatMultiple, formatPercent, parseStickerFilter } from "../format";
 
 describe("baseItemName", () => {
   it("drops wear, StatTrak and Souvenir", () => {
@@ -41,5 +41,12 @@ describe("sticker filters", () => {
     expect(describeStickers('[{"i":663},{"i":5021}]')).toBe("sticker 663 + sticker 5021");
     expect(describeStickers("not json")).toBe("Stickers");
     expect(describeQuery({ stickers: craft })).toEqual(["4 stickers"]);
+  });
+});
+
+describe("portfolio numbers", () => {
+  it("formats percentages and multiples compactly", () => {
+    expect([formatPercent(15), formatPercent(12.54), formatPercent(0)]).toEqual(["15%", "12.5%", "0%"]);
+    expect([formatMultiple(1.04), formatMultiple(3.46), formatMultiple(12.6)]).toEqual(["1×", "3.5×", "13×"]);
   });
 });

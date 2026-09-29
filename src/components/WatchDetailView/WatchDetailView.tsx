@@ -7,9 +7,11 @@ import { DeleteWatchButton } from "@/components/DeleteWatchButton";
 import { ListingCard } from "@/components/ListingCard";
 import { ListingGrid } from "@/components/ListingGrid";
 import { RunStatusBadge, RunSummaryLine } from "@/components/RunStatus";
-import { Badge, Button, EmptyState, ErrorNote, LinkButton, PageHeader, Skeleton, Tab, TabList } from "@/components/ui";
+import { Badge, Button, EmptyState, ErrorNote, LinkButton, PageHeader, Select, Skeleton, Tab, TabList } from "@/components/ui";
 import { WatchForm } from "@/components/WatchForm";
-import { describeSchedule, sortLabel, timeAgo } from "@/core/format";
+import { describeSchedule, SORT_LABELS, sortLabel, timeAgo } from "@/core/format";
+import { LOCAL_SORTS, sortListings } from "@/core/listing";
+import { sortOf, type SortBy } from "@/core/types";
 import { MARK_WATCH_SEEN, RUN_WATCH, WATCH_DETAIL } from "@/graphql/operations";
 import { ignore } from "@/lib/ignore";
 import {
@@ -18,7 +20,9 @@ import {
   DangerText,
   DangerTitle,
   HeaderCard,
+  ListingToolbar,
   Root,
+  SortHint,
   StatusRow,
   Summary,
   Table,
@@ -36,6 +40,8 @@ export function WatchDetailView({ id }: { id: string }) {
   const [runWatch, runState] = useMutation(RUN_WATCH, { refetchQueries: "active" });
   const [markSeen] = useMutation(MARK_WATCH_SEEN);
   const [tab, setTab] = useState<TabKey>("listings");
+  /** How the listings are shown; null = the watch's own sort. Sorted locally, nothing is refetched. */
+  const [viewSort, setViewSort] = useState<SortBy | null>(null);
   const markedFor = useRef<string | null>(null);
 
   const watch = data?.watch;
@@ -47,6 +53,14 @@ export function WatchDetailView({ id }: { id: string }) {
       markSeen({ variables: { id: watch.id } }).catch(ignore);
     }
   }, [watch, markSeen]);
+
+  const watchSort = watch ? sortOf(watch.query) : null;
+  const shownSort = viewSort ?? watchSort;
+  // The server already returns listings in the watch's sort.
+  const listings = useMemo(
+    () => (!watch ? [] : shownSort && shownSort !== watchSort ? sortListings(watch.currentListings, shownSort) : watch.currentListings),
+    [watch, shownSort, watchSort],
+  );
 
   const newIds = useMemo(() => new Set(watch?.lastRun?.status === "DONE" ? watch.lastRun.added.map((a) => a.id) : []), [watch]);
 
@@ -126,13 +140,29 @@ export function WatchDetailView({ id }: { id: string }) {
         watch.currentListings.length === 0 ? (
           <EmptyState title="No listings yet" body="Run the watch to fetch the current results. The first run saves a baseline." />
         ) : (
-          <ListingGrid>
-            {watch.currentListings.map((l) => (
-              <li key={l.id}>
-                <ListingCard listing={l} kind={newIds.has(l.id) ? "NEW" : null} />
-              </li>
-            ))}
-          </ListingGrid>
+          <>
+            <ListingToolbar>
+              <Select aria-label="Sort listings" value={shownSort ?? ""} onChange={(e) => setViewSort(e.target.value as SortBy)}>
+                {[...new Set([watchSort!, ...LOCAL_SORTS])].map((s) => (
+                  <option key={s} value={s}>
+                    {`Sort: ${SORT_LABELS[s]}${s === watchSort ? " (watch)" : ""}`}
+                  </option>
+                ))}
+              </Select>
+              {shownSort !== watchSort ? (
+                <SortHint>
+                  Re-sorted in the browser. The watch still fetches by {SORT_LABELS[watchSort!].toLowerCase()}, so these are the {listings.length} listings that fetch returned.
+                </SortHint>
+              ) : null}
+            </ListingToolbar>
+            <ListingGrid>
+              {listings.map((l) => (
+                <li key={l.id}>
+                  <ListingCard listing={l} kind={newIds.has(l.id) ? "NEW" : null} />
+                </li>
+              ))}
+            </ListingGrid>
+          </>
         )
       ) : null}
 

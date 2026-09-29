@@ -56,20 +56,26 @@ export interface NormalizedWatchInput {
   notify: boolean;
 }
 
-export class WatchInputError extends Error {
+/** Invalid user input; resolvers turn it into a BAD_USER_INPUT error listing the issues. */
+export class InputError extends Error {
   constructor(public issues: string[]) {
     super(issues.join("; "));
-    this.name = "WatchInputError";
+    this.name = "InputError";
   }
+}
+
+/** Parse with `schema`, throwing an InputError with one issue per invalid field. */
+export function parseInput<T extends z.ZodType>(schema: T, raw: unknown): z.output<T> {
+  const parsed = schema.safeParse(raw);
+  if (!parsed.success) {
+    throw new InputError(parsed.error.issues.map((i) => (i.path.length ? `${i.path.join(".")}: ${i.message}` : i.message)));
+  }
+  return parsed.data;
 }
 
 /** Validate + normalise user input. `validateCron` returns an error message or null. */
 export function normalizeWatchInput(raw: unknown, validateCron: (expr: string) => string | null): NormalizedWatchInput {
-  const parsed = WatchInputSchema.safeParse(raw);
-  if (!parsed.success) {
-    throw new WatchInputError(parsed.error.issues.map((i) => (i.path.length ? `${i.path.join(".")}: ${i.message}` : i.message)));
-  }
-  const input = parsed.data;
+  const input = parseInput(WatchInputSchema, raw);
   const query: CsfloatQuery = {};
   for (const key of CSFLOAT_QUERY_KEYS) {
     const v = input.query[key];
@@ -78,7 +84,7 @@ export function normalizeWatchInput(raw: unknown, validateCron: (expr: string) =
   const schedule = input.schedule ? input.schedule : null;
   if (schedule) {
     const err = validateCron(schedule);
-    if (err) throw new WatchInputError([`schedule: ${err}`]);
+    if (err) throw new InputError([`schedule: ${err}`]);
   }
   return {
     name: input.name || null,

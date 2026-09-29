@@ -120,6 +120,11 @@ export function stickerLabel(name: string): string {
   return name.replace(/^Sticker \| /, "");
 }
 
+/** "26% scraped", or null for a pristine (or unknown) sticker. */
+export function formatScrape(wear: number | null | undefined): string | null {
+  return wear ? `${Math.round(wear * 100)}% scraped` : null;
+}
+
 /**
  * "4× Titan (Foil) | Cologne 2015 + sticker 5021": the filter's stickers, counted, using `names`
  * (sticker id -> label) where known and the raw id otherwise. "Stickers" for a filter we can't read.
@@ -164,4 +169,37 @@ export function describeQuery(q: QueryLike): string[] {
   if (q.rarity != null) out.push(`Rarity ${q.rarity}`);
   if (q.filter) out.push(FILTER_LABELS[q.filter] ?? q.filter);
   return out;
+}
+
+/** "15%", "12.5%": at most one decimal. */
+export function formatPercent(percent: number): string {
+  return `${Number(percent.toFixed(1))}%`;
+}
+
+const sign = (n: number) => (n >= 0 ? "+" : "−");
+
+/** "+$12.00" / "−$3.50". */
+export function formatSignedPrice(cents: number): string {
+  return `${sign(cents)}${formatPrice(Math.abs(cents))}`;
+}
+
+/** "+4.2%" / "−10%". */
+export function formatSignedPercent(percent: number): string {
+  return `${sign(percent)}${formatPercent(Math.abs(percent))}`;
+}
+
+/** Value as a multiple of market: "1.4×", "12×". */
+export function formatMultiple(ratio: number): string {
+  return `${ratio >= 10 ? Math.round(ratio) : Number(ratio.toFixed(1))}×`;
+}
+
+/** "29 Sep 2026, 01:25" in the local time zone. */
+export function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" });
+}
+
+/** A snapshot's name and date; just the date when it has no name. */
+export function snapshotTitle(s: { label: string | null; takenAt: string }): string {
+  const date = formatDateTime(s.takenAt);
+  return s.label ? `${s.label} · ${date}` : date;
 }

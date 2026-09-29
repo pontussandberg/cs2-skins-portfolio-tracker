@@ -1,3 +1,4 @@
+import type { InventorySnapshot, PortfolioData, PortfolioSnapshot, SnapshotMeta } from "@/core/portfolio";
 import type { QueryState, RunRecord, Watch } from "@/core/types";
 
 /**
@@ -24,4 +25,18 @@ export interface Store {
   listRuns(watchId: string, limit?: number): Promise<RunRecord[]>;
   /** Newest first, across all watches. */
   listAllRuns(limit?: number): Promise<RunRecord[]>;
+
+  /** Last inventory sync; null before the first. */
+  getInventory(): Promise<InventorySnapshot | null>;
+  saveInventory(snapshot: InventorySnapshot): Promise<void>;
+  /** Valuations and settings you entered (empty defaults before the first save). */
+  getPortfolio(): Promise<PortfolioData>;
+  savePortfolio(data: PortfolioData): Promise<void>;
+
+  /** Saved portfolio snapshots, newest first. */
+  listSnapshots(): Promise<SnapshotMeta[]>;
+  getSnapshot(id: string): Promise<PortfolioSnapshot | null>;
+  saveSnapshot(snapshot: PortfolioSnapshot): Promise<void>;
+  /** False when there is no such snapshot. */
+  deleteSnapshot(id: string): Promise<boolean>;
 }

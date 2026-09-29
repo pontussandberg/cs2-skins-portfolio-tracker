@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Button } from "../Button";
-import { Actions, Body, Dialog, Title } from "./ConfirmDialog.styles";
+import { Modal, ModalActions, ModalTitle } from "../Modal";
+import { Body } from "./ConfirmDialog.styles";
 
-/** Native <dialog> confirmation. */
+/** Modal confirmation for a destructive action. */
 export function ConfirmDialog({
   open,
   title,
@@ -22,23 +23,16 @@ export function ConfirmDialog({
   onCancel: () => void;
   busy?: boolean;
 }) {
-  const ref = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    const d = ref.current;
-    if (!d) return;
-    if (open && !d.open) d.showModal();
-    if (!open && d.open) d.close();
-  }, [open]);
   return (
-    <Dialog ref={ref} onCancel={onCancel}>
-      <Title>{title}</Title>
+    <Modal open={open} onClose={onCancel}>
+      <ModalTitle>{title}</ModalTitle>
       <Body>{body}</Body>
-      <Actions>
+      <ModalActions>
         <Button onClick={onCancel}>Cancel</Button>
         <Button tone="danger" busy={busy} onClick={onConfirm}>
           {confirmLabel}
         </Button>
-      </Actions>
-    </Dialog>
+      </ModalActions>
+    </Modal>
   );
 }

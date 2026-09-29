@@ -1,0 +1,1 @@
+export { CopyInspect } from "./CopyInspect";

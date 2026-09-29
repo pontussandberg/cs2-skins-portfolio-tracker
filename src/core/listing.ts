@@ -18,17 +18,25 @@ export interface ApiListing {
     icon_url?: string | null;
     inspect_link?: string | null;
     is_stattrak?: boolean | null;
-    stickers?:
-      | {
-          stickerId?: number | null;
-          name?: string | null;
-          icon_url?: string | null;
-          slot?: number | null;
-          wear?: number | null;
-          reference?: { price?: number | null } | null;
-        }[]
-      | null;
+    stickers?: (ApiSticker & { stickerId?: number | null })[] | null;
   };
+}
+
+/** A sticker or charm as CSFloat returns it on listings and inventory items. */
+export interface ApiSticker {
+  name?: string | null;
+  icon_url?: string | null;
+  slot?: number | null;
+  wear?: number | null;
+  reference?: { price?: number | null } | null;
+}
+
+/** Named stickers (or charms), in slot order. */
+export function toStickerSnaps(list: ApiSticker[] | null | undefined): StickerSnap[] {
+  return (list ?? [])
+    .filter((s) => s.name)
+    .map((s) => ({ name: s.name!, iconUrl: s.icon_url ?? null, slot: s.slot ?? null, wear: s.wear ?? null, price: s.reference?.price ?? null }))
+    .sort((a, b) => (a.slot ?? 99) - (b.slot ?? 99));
 }
 
 export function toSnap(l: ApiListing): ListingSnap {
@@ -46,22 +54,21 @@ export function toSnap(l: ApiListing): ListingSnap {
     inspectLink: l.item.inspect_link ?? null,
     iconUrl: l.item.icon_url ?? null,
     stickers: (l.item.stickers ?? []).map((s) => s.name ?? "").filter(Boolean),
-    stickerDetails: (l.item.stickers ?? [])
-      .filter((s) => s.name)
-      .map((s) => ({ name: s.name!, iconUrl: s.icon_url ?? null, slot: s.slot ?? null, wear: s.wear ?? null, price: s.reference?.price ?? null }))
-      .sort((a, b) => (a.slot ?? 99) - (b.slot ?? 99)),
+    stickerDetails: toStickerSnaps(l.item.stickers),
     basePrice: l.reference?.base_price ?? null,
     stickerValue: l.reference?.sticker_overpay?.total_price ?? null,
     stattrak: Boolean(l.item.is_stattrak),
   };
 }
 
-type Compare = (a: ListingSnap, b: ListingSnap) => number;
+/** The fields sorting looks at, so client-side listing shapes can be sorted too. */
+type Sortable = Pick<ListingSnap, "price" | "float" | "createdAt">;
+type Compare = (a: Sortable, b: Sortable) => number;
 
 const byCreatedDesc: Compare = (a, b) => (b.createdAt < a.createdAt ? -1 : b.createdAt > a.createdAt ? 1 : 0);
 /** Nulls always sort last. */
 const byNumber =
-  (pick: (l: ListingSnap) => number | null, dir: 1 | -1): Compare =>
+  (pick: (l: Sortable) => number | null, dir: 1 | -1): Compare =>
   (a, b) => {
     const x = pick(a);
     const y = pick(b);
@@ -78,8 +85,11 @@ const COMPARE: Partial<Record<SortBy, Compare>> = {
   highest_float: byNumber((l) => l.float, -1),
 };
 
+/** Sorts sortListings can reproduce locally (the others need CSFloat's reference prices). */
+export const LOCAL_SORTS = Object.keys(COMPARE) as SortBy[];
+
 /** Order listings the way the watch's sort_by does (stable; unknown sorts keep input order). */
-export function sortListings(items: ListingSnap[], sort: SortBy): ListingSnap[] {
+export function sortListings<T extends Sortable>(items: T[], sort: SortBy): T[] {
   const compare = COMPARE[sort];
   return compare ? [...items].sort(compare) : [...items];
 }

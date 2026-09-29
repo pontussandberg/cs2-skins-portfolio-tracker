@@ -7,6 +7,7 @@ import { Bar, Brand, Inner, Links, Logo, LongLabel, Name, NewWatchButton, ShortL
 const LINKS = [
   { href: "/", label: "Feed" },
   { href: "/watches", label: "Watches" },
+  { href: "/portfolio", label: "Portfolio" },
 ];
 
 export function Nav() {

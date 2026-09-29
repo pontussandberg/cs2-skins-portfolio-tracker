@@ -4,6 +4,8 @@ import { gql, type TypedDocumentNode } from "@apollo/client";
 import type {
   CreateWatchMutation,
   CreateWatchMutationVariables,
+  DeletePortfolioSnapshotMutation,
+  DeletePortfolioSnapshotMutationVariables,
   DeleteWatchMutation,
   DeleteWatchMutationVariables,
   FeedQuery,
@@ -12,6 +14,8 @@ import type {
   MarkAllSeenMutationVariables,
   MarkWatchSeenMutation,
   MarkWatchSeenMutationVariables,
+  PortfolioQuery,
+  PortfolioQueryVariables,
   ReorderWatchesMutation,
   ReorderWatchesMutationVariables,
   ResumeSchedulerMutation,
@@ -22,6 +26,14 @@ import type {
   RunWatchMutationVariables,
   SendTestNotificationMutation,
   SendTestNotificationMutationVariables,
+  SetPortfolioSettingsMutation,
+  SetPortfolioSettingsMutationVariables,
+  SetValuationMutation,
+  SetValuationMutationVariables,
+  SyncInventoryMutation,
+  SyncInventoryMutationVariables,
+  TakePortfolioSnapshotMutation,
+  TakePortfolioSnapshotMutationVariables,
   UpdateWatchMutation,
   UpdateWatchMutationVariables,
   WatchDetailQuery,
@@ -29,6 +41,16 @@ import type {
   WatchesQuery,
   WatchesQueryVariables,
 } from "./__generated__/graphql";
+
+const STICKER_FIELDS = gql`
+  fragment StickerFields on Sticker {
+    name
+    iconUrl
+    slot
+    wear
+    price
+  }
+`;
 
 export const LISTING_FIELDS = gql`
   fragment ListingFields on Listing {
@@ -43,11 +65,7 @@ export const LISTING_FIELDS = gql`
     stattrak
     stickers
     stickerDetails {
-      name
-      iconUrl
-      slot
-      wear
-      price
+      ...StickerFields
     }
     stickerPercent
     createdAt
@@ -55,6 +73,7 @@ export const LISTING_FIELDS = gql`
     inspectLink
     iconUrl
   }
+  ${STICKER_FIELDS}
 `;
 
 export const SYSTEM_FIELDS = gql`
@@ -274,4 +293,136 @@ export const RESUME_SCHEDULER: TypedDocumentNode<ResumeSchedulerMutation, Resume
     }
   }
   ${SYSTEM_FIELDS}
+`;
+
+
+const SNAPSHOT_FIELDS = gql`
+  fragment SnapshotFields on PortfolioSnapshot {
+    id
+    label
+    takenAt
+    totals {
+      items
+      value
+      market
+      stickers
+    }
+  }
+`;
+
+const PORTFOLIO_FIELDS = gql`
+  fragment PortfolioFields on Portfolio {
+    id
+    snapshot {
+      ...SnapshotFields
+    }
+    syncedAt
+    syncing
+    syncError
+    settings {
+      defaultCraftPercent
+    }
+    items {
+      id
+      key
+      name
+      type
+      iconUrl
+      float
+      seed
+      lowRank
+      highRank
+      stattrak
+      souvenir
+      tradable
+      csfloatUrl
+      inspectLink
+      stickers {
+        ...StickerFields
+      }
+      charms {
+        ...StickerFields
+      }
+      valuation {
+        craftPercent
+        multiplier
+        skinPrice
+        note
+      }
+      value {
+        market
+        skin
+        stickers
+        craftPercent
+        craft
+        charms
+        total
+        marketTotal
+      }
+    }
+  }
+  ${STICKER_FIELDS}
+  ${SNAPSHOT_FIELDS}
+`;
+
+export const PORTFOLIO: TypedDocumentNode<PortfolioQuery, PortfolioQueryVariables> = gql`
+  query Portfolio($snapshotId: ID!, $history: Boolean!) {
+    portfolio {
+      ...PortfolioFields
+    }
+    portfolioSnapshot(id: $snapshotId) @include(if: $history) {
+      ...PortfolioFields
+    }
+    portfolioSnapshots {
+      ...SnapshotFields
+    }
+    system {
+      ...SystemFields
+    }
+  }
+  ${PORTFOLIO_FIELDS}
+  ${SNAPSHOT_FIELDS}
+  ${SYSTEM_FIELDS}
+`;
+
+export const SYNC_INVENTORY: TypedDocumentNode<SyncInventoryMutation, SyncInventoryMutationVariables> = gql`
+  mutation SyncInventory {
+    syncInventory {
+      ...PortfolioFields
+    }
+  }
+  ${PORTFOLIO_FIELDS}
+`;
+
+export const SET_VALUATION: TypedDocumentNode<SetValuationMutation, SetValuationMutationVariables> = gql`
+  mutation SetValuation($key: ID!, $input: ValuationInput!) {
+    setValuation(key: $key, input: $input) {
+      ...PortfolioFields
+    }
+  }
+  ${PORTFOLIO_FIELDS}
+`;
+
+export const SET_PORTFOLIO_SETTINGS: TypedDocumentNode<SetPortfolioSettingsMutation, SetPortfolioSettingsMutationVariables> = gql`
+  mutation SetPortfolioSettings($input: PortfolioSettingsInput!) {
+    setPortfolioSettings(input: $input) {
+      ...PortfolioFields
+    }
+  }
+  ${PORTFOLIO_FIELDS}
+`;
+
+export const TAKE_PORTFOLIO_SNAPSHOT: TypedDocumentNode<TakePortfolioSnapshotMutation, TakePortfolioSnapshotMutationVariables> = gql`
+  mutation TakePortfolioSnapshot($label: String) {
+    takePortfolioSnapshot(label: $label) {
+      ...SnapshotFields
+    }
+  }
+  ${SNAPSHOT_FIELDS}
+`;
+
+export const DELETE_PORTFOLIO_SNAPSHOT: TypedDocumentNode<DeletePortfolioSnapshotMutation, DeletePortfolioSnapshotMutationVariables> = gql`
+  mutation DeletePortfolioSnapshot($id: ID!) {
+    deletePortfolioSnapshot(id: $id)
+  }
 `;

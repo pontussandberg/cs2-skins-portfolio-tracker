@@ -1,9 +1,10 @@
 import { toSnap, type ApiListing } from "@/core/listing";
 import type { Page } from "@/core/paginate";
+import { toInventoryItem, type InventoryItem } from "@/core/portfolio";
 import type { Logger } from "../logger";
 import { CsfloatAuthError, CsfloatHttpError } from "./errors";
 import { parseResetHeader, RateGate } from "./rateGate";
-import { parseListingsResponse } from "./schemas";
+import { parseInventoryResponse, parseListingsResponse } from "./schemas";
 
 export { CsfloatAuthError, CsfloatHttpError };
 
@@ -50,6 +51,11 @@ export class CsfloatClient {
     for (const [k, v] of Object.entries(params)) url.searchParams.set(k, String(v));
     if (cursor) url.searchParams.set("cursor", cursor);
     return parseListingsResponse(await this.request(url));
+  }
+
+  /** Items in the API key owner's Steam inventory (including ones listed on CSFloat). */
+  async fetchInventory(): Promise<InventoryItem[]> {
+    return parseInventoryResponse(await this.request(new URL(`${CSFLOAT_API}/me/inventory`))).map(toInventoryItem);
   }
 
   /** Raw request, also used by the spike script. Returns parsed JSON. */
