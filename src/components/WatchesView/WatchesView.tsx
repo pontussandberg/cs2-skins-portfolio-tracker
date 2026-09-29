@@ -66,7 +66,13 @@ export function WatchesView() {
                 {testSent ? "Sent to Discord" : "Send test message"}
               </Button>
             ) : null}
-            <Button tone="primary" busy={runAllState.loading} onClick={() => runAll().catch(ignore)} disabled={watches.length === 0}>
+            <Button
+              tone="primary"
+              busy={runAllState.loading}
+              onClick={() => runAll().catch(ignore)}
+              disabled={!watches.some((w) => w.enabled)}
+              title="Runs every enabled watch"
+            >
               Run all
             </Button>
           </>

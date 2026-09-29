@@ -90,6 +90,7 @@ export const resolvers: Resolvers = {
       return runs;
     },
     markWatchSeen: (_p, { id }, { rt }) => rt.markWatchSeen(id).catch(userError),
+    setWatchEnabled: (_p, { id, enabled }, { rt }) => rt.setWatchEnabled(id, enabled).catch(userError),
     markAllSeen: async (_p, _a, { rt }) => {
       for (const w of await rt.store.listWatches()) await rt.markWatchSeen(w.id);
       return true;

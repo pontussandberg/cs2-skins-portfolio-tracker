@@ -30,6 +30,8 @@ import type {
   SetPortfolioSettingsMutationVariables,
   SetValuationMutation,
   SetValuationMutationVariables,
+  SetWatchEnabledMutation,
+  SetWatchEnabledMutationVariables,
   SyncInventoryMutation,
   SyncInventoryMutationVariables,
   TakePortfolioSnapshotMutation,
@@ -261,6 +263,17 @@ export const RUN_ALL: TypedDocumentNode<RunAllMutation, RunAllMutationVariables>
       id
       watchId
       status
+    }
+  }
+`;
+
+export const SET_WATCH_ENABLED: TypedDocumentNode<SetWatchEnabledMutation, SetWatchEnabledMutationVariables> = gql`
+  mutation SetWatchEnabled($id: ID!, $enabled: Boolean!) {
+    setWatchEnabled(id: $id, enabled: $enabled) {
+      id
+      enabled
+      nextRunAt
+      updatedAt
     }
   }
 `;

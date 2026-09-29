@@ -5,21 +5,6 @@ import { Card } from "@/components/ui";
 import { mutedText, raised, stretchedLink, truncate, wrapRow } from "@/styles/shared";
 import { theme } from "@/styles/theme";
 
-export const Root = styled(Card)<{ $dragging?: boolean }>`
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-
-  ${({ $dragging }) =>
-    $dragging &&
-    css`
-      z-index: ${theme.z.dragging};
-      border-color: ${theme.color.accent};
-      box-shadow: ${theme.shadow.lifted};
-    `}
-`;
-
 export const Header = styled.div`
   display: flex;
   align-items: flex-start;
@@ -86,6 +71,31 @@ export const ChipRow = styled.div`
 
 export const Summary = styled.p`
   font-size: 0.75rem;
+`;
+
+/** Defined after its parts so the disabled style can refer to them. */
+export const Root = styled(Card)<{ $dragging?: boolean; $disabled?: boolean }>`
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+
+  /* Disabled: fade the content; the Disabled badge and the actions stay at full strength. */
+  ${({ $disabled }) =>
+    $disabled &&
+    css`
+      & ${Main}, & > ${ChipRow}, & > ${Meta}, & > ${Summary} {
+        opacity: 0.55;
+      }
+    `}
+
+  ${({ $dragging }) =>
+    $dragging &&
+    css`
+      z-index: ${theme.z.dragging};
+      border-color: ${theme.color.accent};
+      box-shadow: ${theme.shadow.lifted};
+    `}
 `;
 
 /** Buttons and links here stay clickable above the card's stretched title link. */

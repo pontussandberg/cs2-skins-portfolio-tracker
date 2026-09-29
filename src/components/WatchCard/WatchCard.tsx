@@ -4,6 +4,7 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { useMutation } from "@apollo/client/react";
 import { RunStatusBadge, RunSummaryLine } from "@/components/RunStatus";
+import { WatchEnabledButton } from "@/components/WatchEnabledButton";
 import { Badge, Button, ErrorNote, LinkButton } from "@/components/ui";
 import { describeQuery, describeSchedule, timeAgo } from "@/core/format";
 import type { WatchesQuery } from "@/graphql/__generated__/graphql";
@@ -39,7 +40,7 @@ export function WatchCard({ watch }: { watch: WatchItem }) {
   const showItem = watch.itemName && !watch.name.includes(watch.itemName);
 
   return (
-    <Root as="li" $lift ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition }} $dragging={isDragging}>
+    <Root as="li" $lift ref={setNodeRef} style={{ transform: CSS.Translate.toString(transform), transition }} $dragging={isDragging} $disabled={!watch.enabled}>
       <Header>
         <Grip ref={setActivatorNodeRef} type="button" aria-label={`Reorder ${watch.name}`} title="Drag to reorder" {...attributes} {...listeners}>
           ⠿
@@ -50,11 +51,11 @@ export function WatchCard({ watch }: { watch: WatchItem }) {
           <Meta>
             {describeSchedule(watch.schedule)}
             {watch.nextRunAt ? ` · next ${timeAgo(watch.nextRunAt)}` : ""}
-            {!watch.enabled ? " · disabled" : ""}
             {watch.notify ? "" : " · Discord off"}
           </Meta>
         </Main>
         <Status>
+          {!watch.enabled ? <Badge title="Skipped by cron and Run all">Disabled</Badge> : null}
           {watch.unreadCount > 0 ? (
             <Badge tone="success" pulse>
               {watch.unreadCount} new
@@ -98,6 +99,7 @@ export function WatchCard({ watch }: { watch: WatchItem }) {
         <LinkButton href={`/watches/${watch.id}`} size="sm">
           Open
         </LinkButton>
+        <WatchEnabledButton watch={watch} size="sm" />
         <DeleteButton watch={watch} size="sm" />
       </Actions>
     </Root>

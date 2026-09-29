@@ -25,6 +25,8 @@ type Mutation {
   runWatch(id: ID!): Run!
   runAll: [Run!]!
   markWatchSeen(id: ID!): Watch!
+  "Disabled watches skip cron and Run all; Run now still works."
+  setWatchEnabled(id: ID!, enabled: Boolean!): Watch!
   markAllSeen: Boolean!
   sendTestNotification: Boolean!
   resumeScheduler: SystemStatus!

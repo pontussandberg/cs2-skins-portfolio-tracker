@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { DeleteWatchButton } from "@/components/DeleteWatchButton";
 import { ListingCard } from "@/components/ListingCard";
 import { ListingGrid } from "@/components/ListingGrid";
+import { WatchEnabledButton } from "@/components/WatchEnabledButton";
 import { RunStatusBadge, RunSummaryLine } from "@/components/RunStatus";
 import { Badge, Button, EmptyState, ErrorNote, LinkButton, PageHeader, Select, Skeleton, Tab, TabList } from "@/components/ui";
 import { WatchForm } from "@/components/WatchForm";
@@ -94,7 +95,6 @@ export function WatchDetailView({ id }: { id: string }) {
             <>
               {describeSchedule(watch.schedule)}
               {watch.nextRunAt ? ` · next run ${timeAgo(watch.nextRunAt)}` : ""}
-              {!watch.enabled ? " · disabled" : ""}
               {sort ? ` · sorted by ${sort.toLowerCase()}` : ""} · Discord {watch.notify ? "on" : "off"} · up to {watch.maxPages} page
               {watch.maxPages === 1 ? "" : "s"} per seed
             </>
@@ -104,6 +104,7 @@ export function WatchDetailView({ id }: { id: string }) {
               <Button tone="primary" busy={running} onClick={() => runWatch({ variables: { id } }).catch(ignore)}>
                 {running ? "Running" : "Run now"}
               </Button>
+              <WatchEnabledButton watch={watch} />
               <LinkButton href={watch.csfloatSearchUrl} external>
                 Open on CSFloat
               </LinkButton>
@@ -111,6 +112,7 @@ export function WatchDetailView({ id }: { id: string }) {
           }
         />
         <StatusRow>
+          {!watch.enabled ? <Badge title="Skipped by cron and Run all">Disabled</Badge> : null}
           <RunStatusBadge run={watch.lastRun} running={watch.isRunning} />
           <Summary>
             <RunSummaryLine run={watch.lastRun} />

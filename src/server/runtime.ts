@@ -40,6 +40,8 @@ export interface Runtime {
   /** Save the dashboard order; returns all watches in the new order. */
   reorderWatches(ids: string[]): Promise<Watch[]>;
   markWatchSeen(id: string): Promise<Watch>;
+  /** Turn cron and Run all on or off for a watch. */
+  setWatchEnabled(id: string, enabled: boolean): Promise<Watch>;
 
   /**
    * The last inventory sync. Syncs first when there is none; when it is older than
@@ -255,6 +257,16 @@ export function createRuntime(opts: CreateRuntimeOptions = {}): Runtime {
       const deleted = await store.deleteSnapshot(id);
       if (deleted) bus.emit({ type: "portfolio.changed" });
       return deleted;
+    },
+
+    async setWatchEnabled(id, enabled) {
+      const existing = await store.getWatch(id);
+      if (!existing) throw new Error("Watch not found");
+      const watch: Watch = { ...existing, enabled, updatedAt: new Date().toISOString() };
+      await store.saveWatch(watch);
+      scheduler.sync(watch);
+      bus.emit({ type: "watches.changed" });
+      return watch;
     },
 
     async markWatchSeen(id) {
