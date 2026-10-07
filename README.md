@@ -72,7 +72,7 @@ src/graphql/              resolvers, Apollo Server, operations used by the UI
 src/app/                  pages + /api/graphql + /api/events (SSE)
 src/components/           UI primitives and views
 scripts/                  spike + CLI runner
-deploy/                   systemd unit + packaging script
+deploy/                   systemd unit, packaging, VPS setup + deploy scripts
 ```
 
 ## Deploy on the Raspberry Pi
@@ -88,6 +88,23 @@ Use 64-bit Raspberry Pi OS with Node 22 LTS.
 Already running the old `csfloat-watcher` service? Stop and remove it first (`sudo systemctl disable --now csfloat-watcher && sudo rm /etc/systemd/system/csfloat-watcher.service`), then move `/opt/csfloat-watcher` to `/opt/cs2-skins-portfolio-tracker` (it holds `data/` and `.env.local`) before step 2.
 
 The UI has no login: keep it on your LAN, and use Tailscale for access away from home instead of port-forwarding. Back up `DATA_DIR` now and then.
+
+## Deploy on a VPS (Hetzner Cloud or similar)
+
+Any Ubuntu 24.04 server works; 1 GB RAM is enough, since the app is built on your PC. Everything runs from your PC with `deploy/deploy.sh` (Git Bash on Windows is fine; it only needs `ssh` and `tar`).
+
+1. Create the server with your SSH public key added, check that `ssh root@<ip>` works, and put `DEPLOY_HOST=root@<ip>` in `.env.local`.
+2. `bash deploy/deploy.sh setup`: installs Node 22, swap, a firewall, automatic security updates, Tailscale (log in with the link it prints), the systemd service and a daily data backup. Safe to re-run.
+3. Fill in the API key and webhook on the server: `ssh root@<ip> nano /etc/cs2-skins-portfolio-tracker.env`.
+4. `bash deploy/deploy.sh app`: builds and ships the app, then restarts it. Run it again after every change.
+5. Optional: `bash deploy/deploy.sh data` copies your local `data/` to the server (stop the app on your PC first, so the two don't diverge).
+6. Install Tailscale on your PC and phone with the same account and open `http://<server-name>:3000`. The firewall only lets SSH in from the internet; the app isn't reachable without Tailscale.
+
+### Public HTTPS with your own domain (optional)
+
+Add an A record for a (sub)domain pointing at the server, put `DEPLOY_DOMAIN=cs2.example.com` in `.env.local`, and re-run `bash deploy/deploy.sh setup`. That installs Caddy (automatic Let's Encrypt certificate), opens ports 80/443, sets `APP_URL`, and generates `APP_PASSWORD` (printed once; it's in the server's env file). The browser asks for that password once (any username); `src/proxy.ts` enforces it whenever `APP_PASSWORD` is set, so local dev stays open. Port 3000 stays closed to the internet.
+
+On the server: app in `/opt/cs2-skins-portfolio-tracker` (replaced on each deploy, previous one in `.old`), data in `/var/lib/cs2-skins-portfolio-tracker`, nightly backups (14 kept) in `/var/backups/cs2-skins-portfolio-tracker`. `bash deploy/deploy.sh backup` downloads a copy to your PC, and `bash deploy/deploy.sh logs` follows the logs.
 
 ## Notes
 

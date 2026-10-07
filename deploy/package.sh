@@ -8,8 +8,7 @@ cd "$(dirname "$0")/.."
 
 pnpm build
 rm -rf dist
-mkdir -p dist/.next
-cp -r .next/standalone/. dist/
+node deploy/copy-standalone.mjs .next/standalone dist
 cp -r .next/static dist/.next/static
 [ -d public ] && cp -r public dist/public
 cp schema.graphql dist/schema.graphql
